@@ -50,11 +50,19 @@ func classify(stderr string, fallback error) error {
 		strings.Contains(s, "no video in this"),
 		strings.Contains(s, "there's no video"),
 		strings.Contains(s, "has been removed"),
+		strings.Contains(s, "has been deleted"),
+		strings.Contains(s, "post was deleted"),
+		strings.Contains(s, "post has been removed"),
 		strings.Contains(s, "age-restricted"),
 		strings.Contains(s, "login required"),
 		strings.Contains(s, "empty media response"),
 		strings.Contains(s, "without being logged-in"),
-		strings.Contains(s, "http error 404"):
+		strings.Contains(s, "http error 410"),
+		strings.Contains(s, "410: gone"),
+		strings.Contains(s, "410 gone"),
+		strings.Contains(s, "http error 404"),
+		strings.Contains(s, "404: not found"),
+		strings.Contains(s, "404 not found"):
 		if msg != "" {
 			return fmt.Errorf("%w: %s", ErrUnavailable, msg)
 		}
