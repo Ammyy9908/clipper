@@ -5,20 +5,19 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} go build -ldflags="-s -w" -o /app/bin/api ./cmd/api
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} go build -ldflags="-s -w" -o /app/bin/worker ./cmd/worker
 
 FROM alpine:3.20
-RUN apk add --no-cache ffmpeg ca-certificates python3 py3-pip nodejs-current && \
+# Worker needs full media toolchain: ffmpeg, nodejs-current, curl-cffi, fonts
+RUN apk add --no-cache ffmpeg ca-certificates font-dejavu font-noto python3 py3-pip nodejs-current && \
     pip3 install --no-cache-dir --break-system-packages "yt-dlp[default]" yt-dlp-ejs pycryptodomex curl-cffi && \
     sed -i 's/MIN_SUPPORTED_VERSION = (22, 0, 0)/MIN_SUPPORTED_VERSION = (20, 0, 0)/g' /usr/lib/python3.12/site-packages/yt_dlp/utils/_jsruntime.py && \
     mkdir -p /etc /scratch /etc/yt-dlp && \
     printf -- "--cache-dir /tmp/ytdlp-cache\n" > /etc/yt-dlp.conf && \
     rm -rf /root/.cache /var/cache/apk/*
 
-COPY --from=builder /app/bin/api /usr/local/bin/api
 COPY --from=builder /app/bin/worker /usr/local/bin/worker
 COPY cookies.txt /etc/yt-dlp/cookies.txt
 ENV WORK_DIR=/scratch
-EXPOSE 8080
-CMD ["api"]
+
+ENTRYPOINT ["/usr/local/bin/worker"]

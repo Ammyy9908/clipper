@@ -5,20 +5,22 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
+# Strip debug symbols (-s -w) to shrink the Go binary from 35MB to ~15MB
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} go build -ldflags="-s -w" -o /app/bin/api ./cmd/api
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} go build -ldflags="-s -w" -o /app/bin/worker ./cmd/worker
 
 FROM alpine:3.20
-RUN apk add --no-cache ffmpeg ca-certificates python3 py3-pip nodejs-current && \
+# API metadata resolver needs python3, nodejs-current (for V8 challenge solving), and yt-dlp
+RUN apk add --no-cache ca-certificates python3 py3-pip nodejs-current ffmpeg && \
     pip3 install --no-cache-dir --break-system-packages "yt-dlp[default]" yt-dlp-ejs pycryptodomex curl-cffi && \
     sed -i 's/MIN_SUPPORTED_VERSION = (22, 0, 0)/MIN_SUPPORTED_VERSION = (20, 0, 0)/g' /usr/lib/python3.12/site-packages/yt_dlp/utils/_jsruntime.py && \
-    mkdir -p /etc /scratch /etc/yt-dlp && \
+    mkdir -p /etc /etc/yt-dlp /tmp/ytdlp-cache && \
     printf -- "--cache-dir /tmp/ytdlp-cache\n" > /etc/yt-dlp.conf && \
     rm -rf /root/.cache /var/cache/apk/*
 
 COPY --from=builder /app/bin/api /usr/local/bin/api
-COPY --from=builder /app/bin/worker /usr/local/bin/worker
 COPY cookies.txt /etc/yt-dlp/cookies.txt
-ENV WORK_DIR=/scratch
+RUN mkdir -p /etc/yt-dlp
+
 EXPOSE 8080
-CMD ["api"]
+ENTRYPOINT ["/usr/local/bin/api"]
+

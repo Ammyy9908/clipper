@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -117,37 +118,66 @@ type attempt struct {
 	playerClients string
 }
 
-func (r *Resolver) candidateAttempts() []attempt {
+func isYouTube(raw string) bool {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return false
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	host := strings.ToLower(u.Host)
+	return strings.Contains(host, "youtube.com") || strings.EqualFold(host, "youtu.be")
+}
+
+func (r *Resolver) candidateAttempts(isYT bool) []attempt {
 	var attempts []attempt
 
-	// 1. Direct attempt with cookies (tv_embedded,web_embedded,mweb)
-	if r.Cookies != "" {
-		attempts = append(attempts, attempt{
-			proxy:         "",
-			cookies:       r.Cookies,
-			playerClients: "tv_embedded,web_embedded,mweb",
-		})
-	}
-
-	// 2. Direct clean attempt without cookies (android,ios,web_embedded - bypasses PO token requirements)
-	attempts = append(attempts, attempt{
-		proxy:         "",
-		cookies:       "",
-		playerClients: "android,ios,web_embedded,mweb",
-	})
-
-	// 3. Proxy fallback
-	if n := len(r.Proxies); n > 0 {
-		perm := rand.Perm(n)
-		maxFallbacks := 2
-		if n < maxFallbacks {
-			maxFallbacks = n
-		}
-		for i := 0; i < maxFallbacks; i++ {
+	if isYT {
+		// 1. Direct attempt with cookies (tv_embedded,web_embedded,mweb)
+		if r.Cookies != "" {
 			attempts = append(attempts, attempt{
-				proxy:         r.Proxies[perm[i]],
+				proxy:         "",
 				cookies:       r.Cookies,
 				playerClients: "tv_embedded,web_embedded,mweb",
+			})
+		}
+
+		// 2. Direct clean attempt without cookies (android,ios,web_embedded - bypasses PO token requirements)
+		attempts = append(attempts, attempt{
+			proxy:         "",
+			cookies:       "",
+			playerClients: "android,ios,web_embedded,mweb",
+		})
+
+		// 3. Proxy fallback
+		if n := len(r.Proxies); n > 0 {
+			perm := rand.Perm(n)
+			maxFallbacks := 2
+			if n < maxFallbacks {
+				maxFallbacks = n
+			}
+			for i := 0; i < maxFallbacks; i++ {
+				attempts = append(attempts, attempt{
+					proxy:         r.Proxies[perm[i]],
+					cookies:       r.Cookies,
+					playerClients: "tv_embedded,web_embedded,mweb",
+				})
+			}
+		}
+	} else {
+		// Non-YouTube platforms (Reddit, Pinterest, TikTok, Instagram, etc.):
+		// 1. Direct extraction first
+		attempts = append(attempts, attempt{
+			proxy:   "",
+			cookies: "",
+		})
+		// 2. Proxy fallback if proxy pool is configured
+		if n := len(r.Proxies); n > 0 {
+			attempts = append(attempts, attempt{
+				proxy:   r.Proxies[rand.Intn(n)],
+				cookies: "",
 			})
 		}
 	}
@@ -181,9 +211,10 @@ func (r *Resolver) Resolve(ctx context.Context, url string) (Info, error) {
 	}
 	defer release()
 
-	attempts := r.candidateAttempts()
+	isYT := isYouTube(url)
+	attempts := r.candidateAttempts(isYT)
 	var lastErr error
-	useOAuth2 := hasOAuth2Token()
+	useOAuth2 := isYT && hasOAuth2Token()
 	isPlaylist := LooksLikePlaylistURL(url)
 
 	for _, att := range attempts {
@@ -191,35 +222,42 @@ func (r *Resolver) Resolve(ctx context.Context, url string) (Info, error) {
 			break
 		}
 
-		playerClients := att.playerClients
-		if playerClients == "" {
-			playerClients = "tv_embedded,web_embedded,mweb"
-		}
-		if useOAuth2 {
-			playerClients = "tv_embedded,tv,mweb,web"
-		}
-
 		args := []string{
 			"-J",
 			"--no-warnings",
 			"--no-progress",
 			"--no-check-formats",
-			"--remote-components", "ejs:github",
-			"--js-runtimes", "node",
 			"--cache-dir", "/tmp/ytdlp-cache",
-			"--socket-timeout", "6",
-			"--impersonate", "chrome",
-			"--extractor-args", fmt.Sprintf("youtube:player_client=%s;skip=translated_subs,storyboards,comments,subtitles", playerClients),
 		}
+
+		if isYT {
+			playerClients := att.playerClients
+			if playerClients == "" {
+				playerClients = "tv_embedded,web_embedded,mweb"
+			}
+			if useOAuth2 {
+				playerClients = "tv_embedded,tv,mweb,web"
+			}
+			args = append(args,
+				"--remote-components", "ejs:github",
+				"--js-runtimes", "node",
+				"--socket-timeout", "6",
+				"--impersonate", "chrome",
+				"--extractor-args", fmt.Sprintf("youtube:player_client=%s;skip=translated_subs,storyboards,comments,subtitles", playerClients),
+			)
+			if useOAuth2 {
+				args = append(args, "--username", "oauth2", "--password", "")
+			}
+		} else {
+			args = append(args, "--socket-timeout", "10")
+		}
+
 		if isPlaylist {
 			args = append(args, "--flat-playlist", "--playlist-end", strconv.Itoa(r.playlistMax()))
 		} else {
 			args = append(args, "--no-playlist")
 		}
 
-		if useOAuth2 {
-			args = append(args, "--username", "oauth2", "--password", "")
-		}
 		if att.proxy != "" {
 			args = append(args, "--proxy", att.proxy)
 		}
@@ -230,7 +268,11 @@ func (r *Resolver) Resolve(ctx context.Context, url string) (Info, error) {
 		}
 		args = append(args, "--", url)
 
-		attemptCtx, attemptCancel := context.WithTimeout(ctx, 15*time.Second)
+		attemptTimeout := 15 * time.Second
+		if !isYT {
+			attemptTimeout = 10 * time.Second
+		}
+		attemptCtx, attemptCancel := context.WithTimeout(ctx, attemptTimeout)
 		var stderr strings.Builder
 		cmd := exec.CommandContext(attemptCtx, r.Bin, args...)
 		cmd.Stderr = &stderr
@@ -270,44 +312,55 @@ func (r *Resolver) Fetch(ctx context.Context, url, selector string, audioOnly bo
 		}
 	}
 
+	isYT := isYouTube(url)
 	var attempts []attempt
-	// 1. Direct with cookies fallback
-	if r.Cookies != "" {
-		attempts = append(attempts, attempt{proxy: "", cookies: r.Cookies})
+	if isYT {
+		// 1. Direct with cookies fallback
+		if r.Cookies != "" {
+			attempts = append(attempts, attempt{proxy: "", cookies: r.Cookies})
+		}
+		// 2. Direct clean attempt
+		attempts = append(attempts, attempt{proxy: "", cookies: ""})
+	} else {
+		attempts = append(attempts, attempt{proxy: "", cookies: ""})
 	}
-	// 2. Direct clean attempt
-	attempts = append(attempts, attempt{proxy: "", cookies: ""})
 
 	var lastErr error
-	useOAuth2 := hasOAuth2Token()
+	useOAuth2 := isYT && hasOAuth2Token()
 
 	for _, att := range attempts {
-		playerClients := "web_embedded,tv,mweb,web"
-		if useOAuth2 {
-			playerClients = "tv_embedded,tv,mweb,web"
-		}
 		args := []string{
 			"-f", selector,
 			"--no-playlist",
 			"--no-warnings",
 			"--newline",
 			"--socket-timeout", "15",
-			"--impersonate", "chrome",
 			"--retries", "10",
 			"--fragment-retries", "10",
 			"--file-access-retries", "5",
 			"--retry-sleep", "1",
 			"--concurrent-fragments", "4",
-			"--remote-components", "ejs:github",
-			"--extractor-args", fmt.Sprintf("youtube:player_client=%s;skip=translated_subs,storyboards,comments", playerClients),
-			"--js-runtimes", "node",
 			"-o", dest,
 		}
+
+		if isYT {
+			playerClients := "web_embedded,tv,mweb,web"
+			if useOAuth2 {
+				playerClients = "tv_embedded,tv,mweb,web"
+			}
+			args = append(args,
+				"--impersonate", "chrome",
+				"--remote-components", "ejs:github",
+				"--extractor-args", fmt.Sprintf("youtube:player_client=%s;skip=translated_subs,storyboards,comments", playerClients),
+				"--js-runtimes", "node",
+			)
+			if useOAuth2 {
+				args = append(args, "--username", "oauth2", "--password", "")
+			}
+		}
+
 		if r.MaxFilesize > 0 {
 			args = append(args, "--max-filesize", strconv.FormatInt(r.MaxFilesize, 10))
-		}
-		if useOAuth2 {
-			args = append(args, "--username", "oauth2", "--password", "")
 		}
 		if !audioOnly {
 			args = append(args, "--merge-output-format", "mp4")
