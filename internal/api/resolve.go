@@ -83,6 +83,7 @@ func (a *API) resolve(w http.ResponseWriter, r *http.Request) {
 		badRequest(w, "invalid JSON body")
 		return
 	}
+	req.URL = unshortenURL(r.Context(), req.URL)
 	req.URL = normalizeURL(req.URL)
 	if err := validateURL(req.URL); err != nil {
 		badRequest(w, err.Error())
@@ -336,6 +337,76 @@ func isYouTubeMusic(raw string) bool {
 	return host == "music.youtube.com" || strings.HasSuffix(host, ".music.youtube.com")
 }
 
+var unshortenClient = &http.Client{
+	Timeout: 5 * time.Second,
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		if len(via) >= 8 {
+			return http.ErrUseLastResponse
+		}
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+		return nil
+	},
+}
+
+func needsUnshortening(u *url.URL) bool {
+	host := strings.ToLower(u.Host)
+	path := u.Path
+
+	// Reddit short links: /r/.../s/XYZ or /s/XYZ or reddit.app.link
+	if strings.Contains(host, "reddit.com") && (strings.Contains(path, "/s/") || strings.HasPrefix(path, "/s/")) {
+		return true
+	}
+	if host == "reddit.app.link" {
+		return true
+	}
+	// Pinterest short links: pin.it
+	if host == "pin.it" || strings.HasSuffix(host, ".pin.it") {
+		return true
+	}
+	// TikTok short links: vm.tiktok.com, vt.tiktok.com
+	if host == "vm.tiktok.com" || host == "vt.tiktok.com" {
+		return true
+	}
+	// Generic short links
+	if host == "ig.me" || host == "t.co" || host == "bit.ly" {
+		return true
+	}
+	return false
+}
+
+func unshortenURL(ctx context.Context, raw string) string {
+	raw = strings.TrimSpace(raw)
+	u, err := url.Parse(raw)
+	if err != nil || !needsUnshortening(u) {
+		return raw
+	}
+
+	reqCtx, cancel := context.WithTimeout(ctx, 4*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, raw, nil)
+	if err != nil {
+		return raw
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+
+	resp, err := unshortenClient.Do(req)
+	if err != nil {
+		return raw
+	}
+	defer resp.Body.Close()
+
+	if resp.Request != nil && resp.Request.URL != nil {
+		finalURL := resp.Request.URL.String()
+		if finalURL != "" && finalURL != raw {
+			return finalURL
+		}
+	}
+	return raw
+}
+
 func normalizeURL(raw string) string {
 	raw = strings.TrimSpace(raw)
 	u, err := url.Parse(raw)
@@ -358,6 +429,16 @@ func normalizeURL(raw string) string {
 		q.Del("feature")
 		q.Del("pp")
 		q.Del("app")
+		u.RawQuery = q.Encode()
+	}
+	if strings.Contains(u.Host, "reddit.com") {
+		q := u.Query()
+		q.Del("share_id")
+		q.Del("utm_source")
+		q.Del("utm_medium")
+		q.Del("utm_name")
+		q.Del("utm_content")
+		q.Del("utm_term")
 		u.RawQuery = q.Encode()
 	}
 	return u.String()
