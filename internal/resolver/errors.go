@@ -82,5 +82,11 @@ func classify(stderr string, fallback error) error {
 	if msg != "" {
 		return fmt.Errorf("yt-dlp: %s", msg)
 	}
+	if fallback != nil {
+		fStr := fallback.Error()
+		if strings.Contains(fStr, "signal: killed") || strings.Contains(fStr, "deadline exceeded") {
+			return fmt.Errorf("%w: extraction timed out", ErrBusy)
+		}
+	}
 	return fmt.Errorf("yt-dlp: %w", fallback)
 }
