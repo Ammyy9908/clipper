@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dev only: permits plain HTTP everywhere so any LAN IP works without
+     editing this file each time the router reassigns one.
+     Delete this file (and the manifest reference) once the backend is on HTTPS. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

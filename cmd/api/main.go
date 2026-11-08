@@ -9,11 +9,13 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata" // QUOTA_TZ works even on images without a system timezone database
 
 	"github.com/hibiken/asynq"
 
 	"github.com/ammyy9908/clipper/internal/api"
 	"github.com/ammyy9908/clipper/internal/config"
+	"github.com/ammyy9908/clipper/internal/queue"
 	"github.com/ammyy9908/clipper/internal/resolver"
 	"github.com/ammyy9908/clipper/internal/storage"
 	"github.com/ammyy9908/clipper/internal/store"
@@ -37,16 +39,41 @@ func main() {
 		os.Exit(1)
 	}
 
-	res := resolver.New(cfg.YtdlpBin, cfg.Proxies, cfg.CookiesFile)
+	days := int32(cfg.OutputTTL.Hours() / 24)
+	if days < 1 {
+		days = 1
+	}
+	if err := files.EnsureLifecycle(ctx, days); err != nil {
+		log.Warn("r2 lifecycle config failed", "err", err)
+	} else {
+		log.Info("r2 lifecycle configured", "expire_days", days)
+	}
 
-	q := asynq.NewClient(asynq.RedisClientOpt{Addr: cfg.RedisAddr})
+	res := resolver.New(cfg.YtdlpBin, cfg.Proxies, cfg.CookiesFile)
+	res.PlaylistMax = cfg.PlaylistMaxItems
+	res.MaxConcurrent = cfg.ResolveConcurrency
+
+	redisOpt, err := queue.ParseRedisOpt(cfg.RedisAddr)
+	if err != nil {
+		log.Error("invalid redis addr", "err", err)
+		os.Exit(1)
+	}
+
+	q := asynq.NewClient(redisOpt)
 	defer q.Close()
+
+	rdb, err := queue.NewRedisClient(cfg.RedisAddr)
+	if err != nil {
+		log.Error("redis client failed", "err", err)
+		os.Exit(1)
+	}
+	defer rdb.Close()
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           api.New(cfg, db, q, files, res, log).Routes(),
+		Handler:           api.New(cfg, db, q, rdb, files, res, log).Routes(),
 		ReadHeaderTimeout: 10 * time.Second,
-		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	go func() {

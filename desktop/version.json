@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "releaseDate": "2026-09-25",
+  "notes": "ClipPlay Desktop v1.0.0 — High-speed 4K & MP3 native video downloader with instant auto-clipboard capture and local FFmpeg engine.",
+  "mandatory": false,
+  "downloads": {
+    "mac_arm64": "https://downloads.clipplay.video/builds/downloads/ClipPlay-mac-arm64.dmg",
+    "mac_arm64_zip": "https://downloads.clipplay.video/builds/downloads/ClipPlay-mac-arm64.zip",
+    "mac_x64": "https://downloads.clipplay.video/builds/downloads/ClipPlay-mac-x64.dmg",
+    "mac_x64_zip": "https://downloads.clipplay.video/builds/downloads/ClipPlay-mac-x64.zip",
+    "win_x64": "https://downloads.clipplay.video/builds/downloads/ClipPlay-Setup.exe",
+    "win_portable": "https://downloads.clipplay.video/builds/downloads/ClipPlay-Portable.exe"
+  }
+}

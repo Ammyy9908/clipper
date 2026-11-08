@@ -1,0 +1,14 @@
+.git
+.gitignore
+bin/
+scratch/
+web/
+android/
+ios/
+website/
+brag-output/
+*.mp4
+*.mkv
+*.webm
+*.mp3
+*.part

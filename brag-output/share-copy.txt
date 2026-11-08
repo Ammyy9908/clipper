@@ -1,0 +1,2 @@
+Made clipPlay: copy a video link and the app already knows. Save it, split it into vertical 9:16 clips, or keep just the MP3.
+Copy. Paste. Done.

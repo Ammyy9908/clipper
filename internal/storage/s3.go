@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awscfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 
 	"github.com/ammyy9908/clipper/internal/config"
 )
@@ -31,6 +32,63 @@ func New(ctx context.Context, cfg config.Config) (*Store, error) {
 		}
 	})
 	return &Store{client: client, presign: s3.NewPresignClient(client), bucket: cfg.S3Bucket}, nil
+}
+
+// EnsureLifecycle sets an automated expiration policy on the bucket for outputs/ and uploads/
+// so Cloudflare R2 automatically purges old files without requiring manual deletion.
+func (s *Store) EnsureLifecycle(ctx context.Context, days int32) error {
+	if days < 1 {
+		days = 1
+	}
+	_, err := s.client.PutBucketLifecycleConfiguration(ctx, &s3.PutBucketLifecycleConfigurationInput{
+		Bucket: aws.String(s.bucket),
+		LifecycleConfiguration: &types.BucketLifecycleConfiguration{
+			Rules: []types.LifecycleRule{
+				{
+					ID:     aws.String("expire-outputs"),
+					Status: types.ExpirationStatusEnabled,
+					Filter: &types.LifecycleRuleFilterMemberPrefix{Value: "outputs/"},
+					Expiration: &types.LifecycleExpiration{
+						Days: aws.Int32(days),
+					},
+					AbortIncompleteMultipartUpload: &types.AbortIncompleteMultipartUpload{
+						DaysAfterInitiation: aws.Int32(1),
+					},
+				},
+				{
+					ID:     aws.String("expire-uploads"),
+					Status: types.ExpirationStatusEnabled,
+					Filter: &types.LifecycleRuleFilterMemberPrefix{Value: "uploads/"},
+					Expiration: &types.LifecycleExpiration{
+						Days: aws.Int32(days),
+					},
+					AbortIncompleteMultipartUpload: &types.AbortIncompleteMultipartUpload{
+						DaysAfterInitiation: aws.Int32(1),
+					},
+				},
+				{
+					ID:     aws.String("expire-sources"),
+					Status: types.ExpirationStatusEnabled,
+					Filter: &types.LifecycleRuleFilterMemberPrefix{Value: "sources/"},
+					Expiration: &types.LifecycleExpiration{
+						Days: aws.Int32(days),
+					},
+					AbortIncompleteMultipartUpload: &types.AbortIncompleteMultipartUpload{
+						DaysAfterInitiation: aws.Int32(1),
+					},
+				},
+			},
+		},
+	})
+	return err
+}
+
+func (s *Store) Delete(ctx context.Context, key string) error {
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	return err
 }
 
 func (s *Store) PresignPut(ctx context.Context, key, contentType string, ttl time.Duration) (string, error) {

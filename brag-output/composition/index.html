@@ -1,0 +1,1213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>clipPlay — Copy. Paste. Done.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --bg: #f9f6f2;
+        --surface: #ffffff;
+        --ink: #1c1a17;
+        --ink2: #6e675e;
+        --ink3: #b8b0a6;
+        --accent: #ff4a38;
+        --accent-ink: #c62f1e;
+        --accent-tint: #ffe8e4;
+        --hair: rgba(0, 0, 0, 0.08);
+        --display: "Nunito", "SF Pro Rounded", ui-rounded, system-ui, sans-serif;
+        --body: "Inter", -apple-system, "SF Pro Text", system-ui, sans-serif;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--bg);
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--bg);
+        font-family: var(--body);
+        color: var(--ink);
+      }
+      .abs {
+        position: absolute;
+      }
+      .scene {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+
+      /* ---------- Scene 1: hook ---------- */
+      #brand1 {
+        position: absolute;
+        left: 96px;
+        top: 80px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font: 900 44px/1 var(--display);
+        color: var(--ink);
+      }
+      #brand1 i {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--accent);
+        display: block;
+      }
+      .hook {
+        position: absolute;
+        left: 0;
+        width: 1920px;
+        text-align: center;
+        font: 900 300px/1 var(--display);
+        letter-spacing: -0.035em;
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      #wCopy {
+        top: 90px;
+      }
+      #wPaste {
+        top: 390px;
+      }
+      #wDone {
+        top: 690px;
+        color: var(--accent);
+      }
+
+      /* ---------- demo scene ---------- */
+      .glow {
+        position: absolute;
+        width: 1200px;
+        height: 1200px;
+        left: 730px;
+        top: -60px;
+        pointer-events: none;
+      }
+      .glow > div {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 74, 56, 0.34) 0%, rgba(255, 74, 56, 0) 62%);
+        opacity: 0.5;
+      }
+      #glowB {
+        left: 360px;
+        top: -190px;
+      }
+      .head {
+        position: absolute;
+        left: 130px;
+        width: 940px;
+        top: 330px;
+        font: 900 88px/1.04 var(--display);
+        letter-spacing: -0.025em;
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      .head em {
+        font-style: normal;
+        color: var(--accent);
+      }
+      .sub {
+        position: absolute;
+        left: 134px;
+        width: 900px;
+        font: 600 34px/1.3 var(--body);
+        color: var(--ink2);
+        white-space: nowrap;
+      }
+      #h2 {
+        top: 300px;
+      }
+      #h2sub {
+        top: 640px;
+      }
+      #h3 {
+        top: 350px;
+      }
+      #h3pill {
+        position: absolute;
+        left: 134px;
+        top: 590px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 30px 16px 22px;
+        border-radius: 999px;
+        background: var(--accent-tint);
+        color: var(--accent-ink);
+        font: 800 34px/1 var(--display);
+      }
+      #h3pill svg {
+        width: 22px;
+        height: 34px;
+      }
+      #h4 {
+        top: 350px;
+      }
+      #h4sub {
+        top: 590px;
+      }
+
+      /* phone */
+      #phone {
+        position: absolute;
+        left: 1122px;
+        top: 102px;
+        width: 417px;
+        height: 876px;
+        border-radius: 64px;
+        background: #0d0c0b;
+        padding: 12px;
+        box-shadow:
+          0 40px 80px rgba(60, 30, 20, 0.22),
+          0 8px 20px rgba(60, 30, 20, 0.18);
+      }
+      #screen {
+        position: relative;
+        width: 393px;
+        height: 852px;
+        border-radius: 52px;
+        overflow: hidden;
+        background: var(--bg);
+        font-family: var(--body);
+      }
+      #island {
+        position: absolute;
+        left: 50%;
+        top: 12px;
+        margin-left: -55px;
+        width: 110px;
+        height: 32px;
+        border-radius: 20px;
+        background: #0d0c0b;
+        z-index: 30;
+      }
+      #status {
+        position: absolute;
+        left: 34px;
+        top: 16px;
+        font: 700 15px/1 var(--body);
+        color: var(--ink);
+        z-index: 29;
+      }
+      .pane {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 393px;
+        height: 852px;
+      }
+      .hdr-title {
+        position: absolute;
+        left: 24px;
+        top: 66px;
+        font: 800 32px/1 var(--display);
+        color: var(--ink);
+      }
+      .hdr-title.big {
+        font-weight: 900;
+        font-size: 34px;
+      }
+      .hdr-sub {
+        position: absolute;
+        left: 24px;
+        top: 110px;
+        font: 500 15px/1.2 var(--body);
+        color: var(--ink2);
+        white-space: nowrap;
+      }
+      .circ {
+        position: absolute;
+        top: 62px;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--surface);
+        border: 1px solid var(--hair);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .circ svg {
+        width: 16px;
+        height: 16px;
+      }
+      .card {
+        position: absolute;
+        left: 24px;
+        width: 345px;
+        border-radius: 20px;
+        background: var(--surface);
+        border: 1px solid var(--hair);
+        overflow: hidden;
+      }
+      .btn {
+        position: absolute;
+        left: 24px;
+        right: 24px;
+        height: 54px;
+        border-radius: 14px;
+        background: var(--accent);
+        color: #fff;
+        font: 800 19px/54px var(--display);
+        text-align: center;
+      }
+      .badge {
+        position: absolute;
+        left: 50%;
+        margin-left: -28px;
+        top: 26px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--accent-tint);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .badge svg {
+        width: 26px;
+        height: 26px;
+      }
+      .ctitle {
+        position: absolute;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        font: 800 24px/1.1 var(--display);
+        color: var(--ink);
+      }
+      .csub {
+        position: absolute;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        font: 500 15px/1.3 var(--body);
+        color: var(--ink2);
+      }
+      #cardIdle {
+        top: 232px;
+        height: 292px;
+      }
+      #cardFetch {
+        top: 274px;
+        height: 200px;
+      }
+      #cardReady {
+        top: 150px;
+        height: 500px;
+      }
+      #spin {
+        position: absolute;
+        left: 50%;
+        margin-left: -20px;
+        top: 36px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 4px solid var(--accent-tint);
+        border-top-color: var(--accent);
+      }
+      #thumb {
+        position: absolute;
+        left: 18px;
+        top: 18px;
+        width: 307px;
+        height: 172px;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #ffb27a 0%, #ff6a4d 48%, #5a2a3a 100%);
+        overflow: hidden;
+      }
+      #thumb .sun {
+        position: absolute;
+        left: 50%;
+        margin-left: -34px;
+        top: 66px;
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        background: #ffe7b0;
+      }
+      #thumb .hill {
+        position: absolute;
+        left: -20px;
+        right: -20px;
+        bottom: -30px;
+        height: 80px;
+        border-radius: 50% 50% 0 0;
+        background: #2b1a25;
+      }
+      #thumb .play {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.92);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #thumb .dur {
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        padding: 4px 8px;
+        border-radius: 8px;
+        background: rgba(20, 12, 10, 0.72);
+        color: #fff;
+        font: 700 12px/1 var(--body);
+      }
+      #rTitle {
+        position: absolute;
+        left: 18px;
+        top: 202px;
+        font: 800 20px/1.1 var(--display);
+        color: var(--ink);
+      }
+      #rUp {
+        position: absolute;
+        left: 18px;
+        top: 230px;
+        font: 500 14px/1.1 var(--body);
+        color: var(--ink2);
+      }
+      #chips {
+        position: absolute;
+        left: 18px;
+        top: 260px;
+        display: flex;
+        gap: 8px;
+      }
+      .chip {
+        padding: 8px 13px;
+        border-radius: 999px;
+        border: 1px solid var(--hair);
+        background: var(--bg);
+        color: var(--ink);
+        font: 700 13px/1 var(--body);
+      }
+      .chip.sel {
+        background: var(--accent-tint);
+        border-color: transparent;
+        color: var(--accent-ink);
+      }
+      #splitRow {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        top: 312px;
+        height: 50px;
+      }
+      #splitRow b {
+        position: absolute;
+        left: 0;
+        top: 3px;
+        font: 800 16px/1 var(--display);
+        color: var(--ink);
+      }
+      #splitRow span {
+        position: absolute;
+        left: 0;
+        top: 26px;
+        font: 500 12.5px/1 var(--body);
+        color: var(--ink2);
+      }
+      #tog {
+        position: absolute;
+        right: 0;
+        top: 8px;
+        width: 50px;
+        height: 30px;
+        border-radius: 15px;
+        background: #ddd6cc;
+      }
+      #togKnob {
+        position: absolute;
+        left: 3px;
+        top: 3px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+      }
+      #secs {
+        position: absolute;
+        left: 18px;
+        top: 372px;
+        display: flex;
+        gap: 8px;
+      }
+      #cardReady .btn {
+        left: 18px;
+        right: 18px;
+        top: 428px;
+      }
+      #cardIdle .btn {
+        top: 208px;
+      }
+      #cursor {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 46px;
+        height: 46px;
+        margin: -23px 0 0 -23px;
+        border-radius: 50%;
+        background: rgba(28, 26, 23, 0.22);
+        border: 2px solid rgba(28, 26, 23, 0.4);
+        z-index: 25;
+      }
+      #ripple {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 46px;
+        height: 46px;
+        margin: -23px 0 0 -23px;
+        border-radius: 50%;
+        border: 3px solid var(--accent);
+        z-index: 24;
+      }
+
+      /* split pane */
+      #gcard {
+        top: 158px;
+        height: 400px;
+      }
+      #gHead {
+        position: absolute;
+        left: 18px;
+        top: 18px;
+        right: 18px;
+      }
+      #gHead b {
+        display: block;
+        font: 800 18px/1.1 var(--display);
+        color: var(--ink);
+      }
+      #gHead span {
+        display: block;
+        margin-top: 6px;
+        font: 500 13px/1.1 var(--body);
+        color: var(--ink2);
+      }
+      .part {
+        position: absolute;
+        top: 82px;
+        width: 96px;
+        height: 170px;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .part .tag {
+        position: absolute;
+        left: 6px;
+        bottom: 6px;
+        padding: 4px 7px;
+        border-radius: 7px;
+        background: rgba(20, 12, 10, 0.74);
+        color: #fff;
+        font: 700 11px/1 var(--body);
+      }
+      .part .sun {
+        position: absolute;
+        left: 50%;
+        margin-left: -18px;
+        top: 52px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #ffe7b0;
+      }
+      .part .hill {
+        position: absolute;
+        left: -14px;
+        right: -14px;
+        bottom: -20px;
+        height: 52px;
+        border-radius: 50% 50% 0 0;
+        background: #2b1a25;
+      }
+      #p1 {
+        left: 18px;
+        background: linear-gradient(180deg, #ffb27a 0%, #ff6a4d 60%, #5a2a3a 100%);
+      }
+      #p2 {
+        left: 124px;
+        background: linear-gradient(180deg, #ffc78a 0%, #ff7a55 60%, #4a2434 100%);
+      }
+      #p3 {
+        left: 230px;
+        background: linear-gradient(180deg, #ff9e7a 0%, #e8483b 60%, #3a1f30 100%);
+      }
+      #p2 .sun {
+        top: 40px;
+      }
+      #p3 .sun {
+        top: 66px;
+      }
+      #gFoot {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        top: 272px;
+        height: 106px;
+      }
+      .frow {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 44px;
+        border-radius: 12px;
+        background: var(--bg);
+        font: 700 14px/44px var(--body);
+        color: var(--ink);
+        padding-left: 14px;
+      }
+      .frow span {
+        position: absolute;
+        right: 14px;
+        color: var(--ink2);
+        font-weight: 500;
+      }
+
+      /* music pane */
+      .sec {
+        position: absolute;
+        left: 20px;
+        font: 800 20px/1 var(--display);
+        color: var(--ink);
+      }
+      .qp {
+        position: absolute;
+        width: 171px;
+        height: 56px;
+        border-radius: 12px;
+        background: var(--surface);
+        border: 1px solid var(--hair);
+        overflow: hidden;
+      }
+      .qp .art {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .qp .art svg {
+        width: 22px;
+        height: 22px;
+      }
+      .qp b {
+        position: absolute;
+        left: 64px;
+        top: 12px;
+        width: 100px;
+        font: 800 13px/1.15 var(--display);
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      .qp span {
+        position: absolute;
+        left: 64px;
+        top: 32px;
+        font: 500 11px/1 var(--body);
+        color: var(--ink2);
+        white-space: nowrap;
+      }
+      .pl {
+        position: absolute;
+        top: 372px;
+        width: 104px;
+      }
+      .pl .sq {
+        width: 104px;
+        height: 104px;
+        border-radius: 14px;
+      }
+      .pl b {
+        display: block;
+        margin-top: 8px;
+        font: 800 13px/1 var(--display);
+        color: var(--ink);
+      }
+      .arow {
+        position: absolute;
+        left: 20px;
+        width: 353px;
+        height: 52px;
+        border-radius: 12px;
+        background: var(--surface);
+        border: 1px solid var(--hair);
+      }
+      .arow .art {
+        position: absolute;
+        left: 8px;
+        top: 8px;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+      }
+      .arow b {
+        position: absolute;
+        left: 54px;
+        top: 11px;
+        font: 800 13.5px/1.1 var(--display);
+        color: var(--ink);
+      }
+      .arow span {
+        position: absolute;
+        left: 54px;
+        top: 30px;
+        font: 500 11px/1 var(--body);
+        color: var(--ink2);
+      }
+      #mini {
+        position: absolute;
+        left: 20px;
+        top: 690px;
+        width: 353px;
+        height: 66px;
+        border-radius: 18px;
+        background: var(--surface);
+        border: 1px solid var(--hair);
+        box-shadow: 0 8px 24px rgba(60, 30, 20, 0.14);
+        z-index: 12;
+        overflow: hidden;
+      }
+      #mini .art {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        width: 46px;
+        height: 46px;
+        border-radius: 10px;
+        background: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #mini .art svg {
+        width: 20px;
+        height: 20px;
+      }
+      #mini b {
+        position: absolute;
+        left: 68px;
+        top: 14px;
+        font: 800 14px/1.1 var(--display);
+        color: var(--ink);
+      }
+      #mini span {
+        position: absolute;
+        left: 68px;
+        top: 33px;
+        font: 500 12px/1 var(--body);
+        color: var(--ink2);
+      }
+      #mini .pp {
+        position: absolute;
+        right: 16px;
+        top: 20px;
+        width: 26px;
+        height: 26px;
+      }
+      #miniBar {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 4px;
+        width: 0;
+        background: var(--accent);
+      }
+
+      /* tab bar */
+      #tabbar {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 393px;
+        height: 84px;
+        background: rgba(255, 255, 255, 0.96);
+        border-top: 1px solid var(--hair);
+        z-index: 20;
+      }
+      .tab {
+        position: absolute;
+        top: 10px;
+        width: 98px;
+        text-align: center;
+        color: var(--ink2);
+      }
+      .tab svg {
+        width: 26px;
+        height: 26px;
+        display: block;
+        margin: 0 auto 4px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .tab span {
+        font: 600 10.5px/1 var(--body);
+      }
+      #t1 {
+        left: 0;
+        color: var(--accent-ink);
+      }
+      #t2 {
+        left: 98px;
+      }
+      #t3 {
+        left: 196px;
+      }
+      #t4 {
+        left: 294px;
+      }
+
+      /* ---------- Scene 5 ---------- */
+      #tile {
+        position: absolute;
+        left: 810px;
+        top: 150px;
+        width: 300px;
+        height: 300px;
+        border-radius: 70px;
+        background: var(--accent);
+        box-shadow: 0 24px 60px rgba(255, 74, 56, 0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #tile svg {
+        width: 150px;
+        height: 150px;
+      }
+      #name {
+        position: absolute;
+        left: 0;
+        width: 1920px;
+        top: 490px;
+        text-align: center;
+        font: 900 168px/1 var(--display);
+        letter-spacing: -0.03em;
+        color: var(--ink);
+      }
+      #tag {
+        position: absolute;
+        left: 0;
+        width: 1920px;
+        top: 700px;
+        text-align: center;
+        font: 800 60px/1 var(--display);
+        color: var(--ink2);
+      }
+      #plats {
+        position: absolute;
+        left: 0;
+        width: 1920px;
+        top: 850px;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+      }
+      #plats span {
+        padding: 16px 32px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid var(--hair);
+        font: 700 30px/1 var(--display);
+        color: var(--ink);
+      }
+
+      /* wipes */
+      .wipe {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+        background: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1920" data-height="1080">
+      <!-- ================= SCENE 1 — HOOK ================= -->
+      <div id="s1" class="scene clip" data-start="0" data-duration="3.02" data-track-index="0">
+        <div id="brand1"><i></i>clipPlay</div>
+        <div id="wCopy" class="hook" data-layout-allow-overlap>Copy.</div>
+        <div id="wPaste" class="hook" data-layout-allow-overlap>Paste.</div>
+        <div id="wDone" class="hook" data-layout-allow-overlap>Done.</div>
+      </div>
+
+      <!-- ================= SCENES 2-4 — DEMO ================= -->
+      <div id="demo" class="scene clip" data-start="3.02" data-duration="13" data-track-index="1">
+        <div id="glowA" data-layout-allow-overflow data-layout-allow-overlap class="glow"><div id="glowAin"></div></div>
+
+        <div id="h2" class="head">Copied a link?<br />clipPlay<br /><em>already knows.</em></div>
+        <div id="h2sub" class="sub">Detected the moment you open the app.</div>
+
+        <div id="h3" class="head">One long video in.<br /><em>Vertical clips out.</em></div>
+        <div id="h3pill">
+          <svg viewBox="0 0 22 34" fill="none" stroke="currentColor" stroke-width="3"><rect x="2" y="2" width="18" height="30" rx="4" /></svg>
+          Auto 9:16 Reframe
+        </div>
+
+        <div id="h4" class="head">Or keep<br /><em>just the sound.</em></div>
+        <div id="h4sub" class="sub">Playlists · Background playback · Lock-screen controls</div>
+
+        <div id="phone" data-layout-allow-overflow>
+          <div id="screen">
+            <div id="island"></div>
+            <div id="status">9:41</div>
+
+            <!-- Download pane -->
+            <div id="scrDL" data-layout-allow-overflow data-layout-allow-overlap class="pane">
+              <div class="hdr-title" data-layout-allow-overlap>clipPlay</div>
+              <div id="sub1" class="hdr-sub" data-layout-allow-overlap>A link is ready to paste</div>
+              <div id="sub2" class="hdr-sub" data-layout-allow-overlap>Reading the link…</div>
+              <div id="sub3" class="hdr-sub" data-layout-allow-overlap>Ready to save</div>
+              <div class="circ" style="left: 279px">
+                <svg viewBox="0 0 24 24" fill="#ff4a38"><path d="M12 2l2.2 6.3L20.5 10l-6.3 1.7L12 18l-2.2-6.3L3.5 10l6.3-1.7z" /></svg>
+              </div>
+              <div class="circ" style="left: 323px">
+                <svg viewBox="0 0 24 24" fill="#6e675e"><circle cx="12" cy="12" r="4" /><path d="M12 1l2 3 3.5-.5.9 3.4 3.3 1.3-1.2 3.3 1.2 3.3-3.3 1.3-.9 3.4-3.5-.5-2 3-2-3-3.5.5-.9-3.4-3.3-1.3 1.2-3.3-1.2-3.3 3.3-1.3.9-3.4 3.5.5z" opacity=".9" /><circle cx="12" cy="12" r="3.4" fill="#fff" /></svg>
+              </div>
+
+              <div id="cardIdle" class="card">
+                <div class="badge">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#c62f1e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" /></svg>
+                </div>
+                <div class="ctitle" style="top: 104px">Link copied</div>
+                <div class="csub" style="top: 142px">Tap below to fetch this video</div>
+                <div id="btnUse" class="btn">Use copied link</div>
+              </div>
+
+              <div id="cardFetch" class="card">
+                <div id="spin"></div>
+                <div class="ctitle" style="top: 106px">Fetching video details</div>
+                <div class="csub" style="top: 142px">Reading the link…</div>
+              </div>
+
+              <div id="cardReady" class="card">
+                <div id="thumb">
+                  <div class="sun"></div>
+                  <div class="hill" data-layout-allow-overflow></div>
+                  <div class="dur">12:08</div>
+                  <div class="play"><svg viewBox="0 0 24 24" width="16" height="16" fill="#1c1a17"><path d="M8 5v14l11-7z" /></svg></div>
+                </div>
+                <div id="rTitle">Sunset drive · 4K</div>
+                <div id="rUp">Roadtrip Diaries</div>
+                <div id="chips">
+                  <div class="chip sel">1080p</div>
+                  <div class="chip">720p</div>
+                  <div class="chip">480p</div>
+                  <div class="chip">MP3</div>
+                </div>
+                <div id="splitRow">
+                  <b>Split into clips</b>
+                  <span>Cuts the video into shorter parts</span>
+                  <div id="tog"><div id="togKnob"></div></div>
+                </div>
+                <div id="secs">
+                  <div class="chip">15s</div>
+                  <div class="chip sel">30s</div>
+                  <div class="chip">60s</div>
+                </div>
+                <div id="btnSave" class="btn">Save &amp; Split</div>
+              </div>
+
+              <div id="ripple"></div>
+              <div id="cursor"></div>
+            </div>
+
+            <!-- Split pane -->
+            <div id="scrSP" data-layout-allow-overflow data-layout-allow-overlap class="pane">
+              <div class="hdr-title big" data-layout-allow-overlap>Split</div>
+              <div class="hdr-sub" data-layout-allow-overlap>Vertical clips, ready to post</div>
+              <div id="gcard" class="card">
+                <div id="gHead"><b>Sunset drive · 4K</b><span>3 parts · 9:16 · 0:30 each</span></div>
+                <div id="p1" class="part"><div class="sun"></div><div class="hill" data-layout-allow-overflow></div><div class="tag">Part 1</div></div>
+                <div id="p2" class="part"><div class="sun"></div><div class="hill" data-layout-allow-overflow></div><div class="tag">Part 2</div></div>
+                <div id="p3" class="part"><div class="sun"></div><div class="hill" data-layout-allow-overflow></div><div class="tag">Part 3</div></div>
+                <div id="gFoot">
+                  <div class="frow" style="top: 0">Auto 9:16 Reframe<span>On</span></div>
+                  <div class="frow" style="top: 54px">Saved to Photos<span>3 clips</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Music pane -->
+            <div id="scrMU" data-layout-allow-overflow data-layout-allow-overlap class="pane">
+              <div class="hdr-title big" data-layout-allow-overlap style="left: 20px">Your Audio</div>
+              <div class="hdr-sub" data-layout-allow-overlap style="left: 20px; font-size: 13px">4 audio tracks</div>
+              <div id="muHead"></div>
+              <div id="qpTitle" class="sec" style="top: 150px">Quick Picks</div>
+              <div id="q1" class="qp" style="left: 20px; top: 190px">
+                <div class="art" style="background: #ff4a38"><svg viewBox="0 0 24 24" fill="#fff"><path d="M9 18V6l10-2v12a3 3 0 1 1-2-2.8V7.3L11 8.5V18a3 3 0 1 1-2-2.8z" /></svg></div>
+                <b>Sunset drive</b><span>Roadtrip Diaries</span>
+              </div>
+              <div id="q2" class="qp" style="left: 202px; top: 190px">
+                <div class="art" style="background: #f3c9a8"><svg viewBox="0 0 24 24" fill="#1c1a17"><path d="M9 18V6l10-2v12a3 3 0 1 1-2-2.8V7.3L11 8.5V18a3 3 0 1 1-2-2.8z" /></svg></div>
+                <b>Night bus</b><span>Late Lines</span>
+              </div>
+              <div id="q3" class="qp" style="left: 20px; top: 256px">
+                <div class="art" style="background: #2b2622"><svg viewBox="0 0 24 24" fill="#fff"><path d="M9 18V6l10-2v12a3 3 0 1 1-2-2.8V7.3L11 8.5V18a3 3 0 1 1-2-2.8z" /></svg></div>
+                <b>Rooftop loop</b><span>Slow Static</span>
+              </div>
+              <div id="q4" class="qp" style="left: 202px; top: 256px">
+                <div class="art" style="background: #d9cbbb"><svg viewBox="0 0 24 24" fill="#1c1a17"><path d="M9 18V6l10-2v12a3 3 0 1 1-2-2.8V7.3L11 8.5V18a3 3 0 1 1-2-2.8z" /></svg></div>
+                <b>Slow morning</b><span>Paper Kites</span>
+              </div>
+              <div id="plTitle" class="sec" style="top: 340px">Playlists</div>
+              <div id="pls">
+                <div class="pl" style="left: 20px"><div class="sq" style="background: #ffe8e4; border: 2px dashed #ff4a38"></div><b>New Playlist</b></div>
+                <div class="pl" style="left: 144px"><div class="sq" style="background: #f3c9a8"></div><b>Drive</b></div>
+                <div class="pl" style="left: 268px"><div class="sq" style="background: #2b2622"></div><b>Focus</b></div>
+              </div>
+              <div id="allTitle" class="sec" style="top: 522px">All Audio</div>
+              <div id="ar1" class="arow" style="top: 558px"><div class="art" style="background: #ff4a38"></div><b>Sunset drive</b><span>Roadtrip Diaries</span></div>
+              <div id="ar2" class="arow" style="top: 618px"><div class="art" style="background: #f3c9a8"></div><b>Night bus</b><span>Late Lines</span></div>
+              <div id="mini">
+                <div class="art"><svg viewBox="0 0 24 24" fill="#fff"><path d="M9 18V6l10-2v12a3 3 0 1 1-2-2.8V7.3L11 8.5V18a3 3 0 1 1-2-2.8z" /></svg></div>
+                <b>Sunset drive</b><span>Roadtrip Diaries</span>
+                <svg class="pp" viewBox="0 0 24 24" fill="#1c1a17"><rect x="6" y="4" width="4.5" height="16" rx="1.5" /><rect x="13.5" y="4" width="4.5" height="16" rx="1.5" /></svg>
+                <div id="miniBar"></div>
+              </div>
+            </div>
+
+            <!-- Tab bar -->
+            <div id="tabbar">
+              <div id="t1" class="tab">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v8M8.5 12l3.5 3.5 3.5-3.5" /></svg>
+                <span>Download</span>
+              </div>
+              <div id="t2" class="tab">
+                <svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="3" /><path d="M16 10.5l5-3v9l-5-3z" /></svg>
+                <span>Videos</span>
+              </div>
+              <div id="t3" class="tab">
+                <svg viewBox="0 0 24 24"><rect x="3" y="5" width="8" height="14" rx="2" /><rect x="13" y="5" width="8" height="14" rx="2" /></svg>
+                <span>Split</span>
+              </div>
+              <div id="t4" class="tab">
+                <svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12" /><circle cx="7" cy="18" r="2.5" /><circle cx="17" cy="16" r="2.5" /></svg>
+                <span>Music</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SCENE 5 — OUTRO ================= -->
+      <div id="s5" class="scene clip" data-start="16.02" data-duration="3.98" data-track-index="2">
+        <div id="glowB" data-layout-allow-overflow data-layout-allow-overlap class="glow"><div id="glowBin"></div></div>
+        <div id="s5in">
+          <div id="tile">
+            <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#fff" /><path d="M40 30v40l32-20z" fill="#ff4a38" /></svg>
+          </div>
+          <div id="name">clipPlay</div>
+          <div id="tag">Download. Organize. Play.</div>
+          <div id="plats"><span>YouTube</span><span>Instagram</span><span>TikTok</span></div>
+        </div>
+      </div>
+
+      <!-- wipes -->
+      <div id="w1" class="wipe clip" data-start="2.78" data-duration="0.6" data-track-index="3"></div>
+      <div id="w4" class="wipe clip" data-start="15.78" data-duration="0.6" data-track-index="3"></div>
+
+      <!-- ================= AUDIO ================= -->
+      <audio id="bg-music" data-start="0" data-duration="20" data-track-index="10" data-volume="0.35" src="assets/music/bed-vol1-20s.mp3"></audio>
+
+      <audio id="sfx-01" data-start="0.18" data-duration="0.13" data-track-index="11" data-volume="0.7" src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx-02" data-start="0.98" data-duration="0.21" data-track-index="12" data-volume="0.7" src="assets/sfx/interface/drop_002.ogg"></audio>
+      <audio id="sfx-03" data-start="1.78" data-duration="0.2" data-track-index="13" data-volume="0.75" src="assets/sfx/impact/impactSoft_medium_001.ogg"></audio>
+      <audio id="sfx-04" data-start="2.94" data-duration="0.16" data-track-index="14" data-volume="0.5" src="assets/sfx/impact/impactSoft_medium_002.ogg"></audio>
+      <audio id="sfx-05" data-start="4.51" data-duration="0.03" data-track-index="15" data-volume="0.8" src="assets/sfx/interface/click_003.ogg"></audio>
+      <audio id="sfx-06" data-start="5.5" data-duration="0.21" data-track-index="16" data-volume="0.6" src="assets/sfx/interface/drop_003.ogg"></audio>
+      <audio id="sfx-07" data-start="7.0" data-duration="0.03" data-track-index="17" data-volume="0.8" src="assets/sfx/interface/click_002.ogg"></audio>
+      <audio id="sfx-08" data-start="8.0" data-duration="0.17" data-track-index="18" data-volume="0.45" src="assets/sfx/impact/impactSoft_medium_004.ogg"></audio>
+      <audio id="sfx-09" data-start="9.0" data-duration="0.62" data-track-index="19" data-volume="0.5" src="assets/sfx/casino/card-slide-1.ogg"></audio>
+      <audio id="sfx-10" data-start="9.5" data-duration="0.62" data-track-index="20" data-volume="0.5" src="assets/sfx/casino/card-slide-1.ogg"></audio>
+      <audio id="sfx-11" data-start="10.0" data-duration="0.62" data-track-index="21" data-volume="0.5" src="assets/sfx/casino/card-slide-1.ogg"></audio>
+      <audio id="sfx-12" data-start="12.0" data-duration="0.17" data-track-index="22" data-volume="0.45" src="assets/sfx/impact/impactSoft_medium_004.ogg"></audio>
+      <audio id="sfx-13" data-start="13.0" data-duration="0.13" data-track-index="23" data-volume="0.55" src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx-14" data-start="14.5" data-duration="0.21" data-track-index="24" data-volume="0.55" src="assets/sfx/interface/drop_002.ogg"></audio>
+      <audio id="sfx-15" data-start="15.0" data-duration="0.08" data-track-index="25" data-volume="0.7" src="assets/sfx/ui/click2.ogg"></audio>
+      <audio id="sfx-16" data-start="15.94" data-duration="0.16" data-track-index="26" data-volume="0.4" src="assets/sfx/impact/impactSoft_medium_002.ogg"></audio>
+      <audio id="sfx-17" data-start="16.02" data-duration="1.5" data-track-index="27" data-volume="0.7" src="assets/sfx/impact/impactBell_heavy_000.ogg"></audio>
+      <audio id="sfx-18" data-start="17.0" data-duration="0.2" data-track-index="28" data-volume="0.5" src="assets/sfx/impact/impactSoft_medium_001.ogg"></audio>
+    </div>
+
+    <script>
+      const AUDIO={"rms":[0.52,0.5,0.49,0.47,0.44,0.46,0.47,0.48,0.49,0.5,0.47,0.44,0.42,0.39,0.38,0.38,0.37,0.42,0.45,0.48,0.51,0.55,0.52,0.5,0.49,0.45,0.41,0.38,0.41,0.42,0.44,0.47,0.47,0.42,0.38,0.37,0.36,0.36,0.37,0.41,0.42,0.43,0.44,0.46,0.43,0.39,0.36,0.37,0.35,0.36,0.4,0.44,0.44,0.46,0.47,0.43,0.39,0.35,0.38,0.39,0.43,0.47,0.5,0.46,0.45,0.46,0.5,0.52,0.54,0.57,0.53,0.47,0.41,0.38,0.33,0.32,0.32,0.38,0.41,0.45,0.5,0.53,0.49,0.45,0.43,0.41,0.38,0.37,0.41,0.43,0.45,0.48,0.48,0.43,0.38,0.36,0.35,0.34,0.35,0.37,0.38,0.39,0.41,0.42,0.41,0.38,0.34,0.32,0.3,0.3,0.35,0.41,0.43,0.46,0.49,0.46,0.41,0.36,0.38,0.41,0.44,0.49,0.53,0.51,0.47,0.47,0.49,0.51,0.52,0.53,0.49,0.46,0.43,0.41,0.39,0.39,0.39,0.44,0.46,0.49,0.52,0.55,0.51,0.49,0.46,0.44,0.42,0.44,0.49,0.52,0.54,0.55,0.52,0.45,0.4,0.39,0.37,0.37,0.38,0.41,0.42,0.42,0.44,0.46,0.43,0.4,0.38,0.38,0.38,0.38,0.43,0.47,0.49,0.5,0.51,0.46,0.41,0.37,0.39,0.41,0.45,0.48,0.51,0.47,0.44,0.44,0.45,0.45,0.46,0.48,0.46,0.43,0.4,0.38,0.36,0.34,0.33,0.38,0.4,0.42,0.45,0.45,0.41,0.38,0.37,0.36,0.35,0.36,0.41,0.42,0.45,0.47,0.49,0.44,0.4,0.4,0.41,0.41,0.43,0.46,0.46,0.45,0.45,0.47,0.46,0.43,0.4,0.4,0.39,0.39,0.41,0.45,0.44,0.43,0.43,0.41,0.35,0.32,0.36,0.39,0.43,0.47,0.51,0.48,0.46,0.48,0.51,0.53,0.55,0.56,0.53,0.48,0.43,0.41,0.38,0.36,0.36,0.41,0.43,0.46,0.5,0.53,0.51,0.48,0.46,0.44,0.42,0.41,0.46,0.48,0.5,0.52,0.52,0.46,0.42,0.39,0.4,0.4,0.42,0.45,0.47,0.45,0.46,0.46,0.43,0.4,0.38,0.39,0.39,0.39,0.42,0.46,0.46,0.47,0.47,0.45,0.43,0.41,0.43,0.45,0.48,0.49,0.5,0.48,0.45,0.45,0.5,0.52,0.53,0.56,0.54,0.46,0.43,0.39,0.36,0.35,0.35,0.39,0.41,0.44,0.49,0.53,0.5,0.46,0.44,0.41,0.38,0.38,0.43,0.45,0.46,0.47,0.48,0.43,0.39,0.36,0.37,0.36,0.37,0.38,0.43,0.42,0.44,0.48,0.47,0.43,0.38,0.35,0.31,0.3,0.31,0.37,0.39,0.42,0.45,0.44,0.39,0.34,0.37,0.4,0.44,0.48,0.51,0.48,0.45,0.45,0.48,0.51,0.52,0.55,0.52,0.47,0.43,0.41,0.38,0.38,0.39,0.43,0.44,0.47,0.51,0.54,0.51,0.48,0.45,0.43,0.39,0.37,0.41,0.44,0.45,0.47,0.48,0.43,0.39,0.37,0.38,0.37,0.38,0.41,0.42,0.42,0.44,0.45,0.44,0.41,0.38,0.39,0.39,0.4,0.43,0.49,0.49,0.49,0.5,0.47,0.41,0.38,0.39,0.42,0.45,0.48,0.51,0.48,0.46,0.46,0.47,0.47,0.49,0.49,0.48,0.44,0.41,0.39,0.36,0.34,0.34,0.37,0.37,0.39,0.39,0.39,0.36,0.34,0.36,0.37,0.38,0.4,0.45,0.47,0.49,0.5,0.53,0.48,0.43,0.4,0.4,0.38,0.4,0.42,0.45,0.45,0.47,0.5,0.5,0.46,0.41,0.39,0.35,0.33,0.34,0.39,0.39,0.4,0.41,0.4,0.35,0.32,0.39,0.52,0.59,0.66,0.7,0.63,0.54,0.51,0.51,0.54,0.57,0.57,0.56,0.53,0.5,0.52,0.61,0.67,0.68,0.7,0.67,0.59,0.56,0.6,0.61,0.6,0.57,0.54,0.48,0.44,0.49,0.58,0.63,0.68,0.68,0.6,0.51,0.46,0.43,0.45,0.47,0.5,0.55,0.56,0.57,0.62,0.7,0.7,0.68,0.67,0.61,0.52,0.48,0.54,0.56,0.58,0.58,0.57,0.5,0.46,0.49,0.56,0.61,0.66,0.66,0.62,0.54,0.5,0.51,0.54,0.58,0.6,0.6,0.54,0.52,0.52,0.61,0.65,0.69,0.7,0.67,0.59,0.56,0.59,0.6,0.6,0.57,0.55,0.49,0.46,0.5,0.58,0.64,0.67,0.66,0.6,0.51,0.43,0.41,0.41,0.41,0.42,0.48,0.51,0.53,0.58,0.66,0.66,0.63,0.59,0.54,0.44,0.39,0.42,0.47,0.51,0.54,0.56,0.51,0.48,0.47,0.45],"bass":[0.43,0.43,0.42,0.42,0.4,0.39,0.38,0.37,0.36,0.36,0.35,0.34,0.34,0.34,0.33,0.33,0.33,0.34,0.35,0.36,0.36,0.37,0.36,0.36,0.36,0.35,0.34,0.34,0.34,0.32,0.31,0.3,0.29,0.28,0.28,0.29,0.3,0.3,0.31,0.32,0.31,0.31,0.31,0.3,0.29,0.28,0.28,0.28,0.28,0.29,0.3,0.3,0.29,0.29,0.28,0.27,0.27,0.27,0.28,0.3,0.32,0.33,0.34,0.34,0.33,0.33,0.33,0.32,0.32,0.32,0.31,0.31,0.29,0.29,0.28,0.27,0.27,0.28,0.29,0.3,0.32,0.32,0.31,0.3,0.3,0.29,0.28,0.28,0.28,0.28,0.27,0.27,0.26,0.25,0.25,0.25,0.27,0.26,0.27,0.26,0.25,0.23,0.23,0.22,0.21,0.21,0.21,0.22,0.22,0.23,0.23,0.25,0.24,0.24,0.24,0.22,0.22,0.21,0.24,0.3,0.35,0.38,0.4,0.4,0.37,0.37,0.37,0.37,0.36,0.36,0.35,0.35,0.35,0.35,0.34,0.34,0.34,0.35,0.35,0.36,0.36,0.36,0.35,0.35,0.35,0.35,0.34,0.38,0.41,0.41,0.4,0.39,0.35,0.31,0.3,0.3,0.31,0.32,0.32,0.32,0.32,0.31,0.31,0.31,0.29,0.28,0.29,0.29,0.29,0.3,0.31,0.31,0.3,0.3,0.29,0.28,0.27,0.28,0.29,0.32,0.36,0.36,0.38,0.38,0.35,0.34,0.34,0.33,0.33,0.33,0.32,0.32,0.31,0.31,0.3,0.3,0.3,0.31,0.31,0.32,0.32,0.32,0.31,0.3,0.31,0.31,0.31,0.32,0.32,0.31,0.31,0.3,0.3,0.29,0.28,0.29,0.3,0.3,0.31,0.32,0.31,0.3,0.3,0.3,0.3,0.28,0.28,0.28,0.27,0.28,0.28,0.28,0.27,0.25,0.25,0.24,0.23,0.24,0.27,0.32,0.37,0.4,0.43,0.43,0.41,0.41,0.4,0.39,0.39,0.37,0.36,0.36,0.35,0.34,0.34,0.33,0.33,0.34,0.34,0.35,0.36,0.37,0.36,0.36,0.36,0.36,0.35,0.35,0.36,0.35,0.34,0.34,0.33,0.32,0.32,0.33,0.33,0.34,0.35,0.36,0.36,0.35,0.35,0.34,0.33,0.32,0.31,0.32,0.32,0.32,0.33,0.34,0.33,0.32,0.33,0.32,0.33,0.34,0.36,0.36,0.37,0.37,0.36,0.35,0.33,0.34,0.33,0.33,0.32,0.32,0.31,0.3,0.3,0.3,0.3,0.29,0.29,0.29,0.3,0.3,0.32,0.33,0.32,0.31,0.3,0.29,0.28,0.28,0.28,0.28,0.27,0.27,0.26,0.25,0.25,0.25,0.27,0.27,0.28,0.28,0.27,0.26,0.24,0.23,0.22,0.22,0.21,0.22,0.22,0.23,0.23,0.24,0.24,0.23,0.23,0.22,0.22,0.21,0.25,0.3,0.32,0.35,0.37,0.37,0.34,0.34,0.35,0.34,0.34,0.34,0.33,0.33,0.32,0.32,0.32,0.32,0.32,0.33,0.33,0.34,0.35,0.35,0.35,0.34,0.34,0.33,0.33,0.32,0.33,0.33,0.32,0.31,0.31,0.3,0.3,0.31,0.32,0.32,0.33,0.33,0.32,0.32,0.32,0.32,0.31,0.3,0.3,0.31,0.3,0.31,0.32,0.32,0.32,0.31,0.3,0.3,0.29,0.28,0.3,0.34,0.35,0.37,0.39,0.38,0.36,0.37,0.35,0.35,0.34,0.34,0.33,0.32,0.31,0.32,0.3,0.3,0.31,0.31,0.31,0.31,0.31,0.32,0.31,0.3,0.32,0.32,0.32,0.33,0.35,0.35,0.34,0.34,0.34,0.31,0.29,0.29,0.29,0.29,0.3,0.31,0.31,0.31,0.31,0.32,0.31,0.29,0.28,0.27,0.25,0.25,0.26,0.27,0.26,0.25,0.25,0.25,0.24,0.24,0.31,0.46,0.55,0.62,0.65,0.61,0.5,0.46,0.44,0.45,0.45,0.44,0.43,0.42,0.42,0.44,0.55,0.63,0.65,0.64,0.61,0.49,0.42,0.39,0.41,0.41,0.4,0.4,0.38,0.38,0.41,0.49,0.54,0.59,0.56,0.52,0.43,0.38,0.34,0.38,0.4,0.41,0.41,0.4,0.41,0.43,0.53,0.59,0.6,0.59,0.55,0.44,0.38,0.35,0.35,0.36,0.36,0.36,0.36,0.36,0.4,0.48,0.55,0.6,0.6,0.57,0.5,0.45,0.41,0.42,0.43,0.42,0.43,0.41,0.42,0.43,0.55,0.61,0.66,0.64,0.6,0.49,0.4,0.38,0.38,0.39,0.38,0.38,0.38,0.38,0.41,0.48,0.55,0.57,0.54,0.49,0.4,0.33,0.3,0.33,0.34,0.36,0.35,0.36,0.35,0.36,0.45,0.52,0.53,0.52,0.49,0.38,0.31,0.29,0.3,0.31,0.31,0.31,0.3,0.31,0.3,0.31]};
+
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const $ = (s) => document.querySelector(s);
+
+      // ---------- base state ----------
+      gsap.set("#phone", { scale: 1.12, transformOrigin: "50% 50%" });
+      gsap.set("#cursor", { x: 300, y: 690, opacity: 0 });
+      gsap.set("#ripple", { x: 196, y: 461, opacity: 0, scale: 0.4 });
+      gsap.set("#sub2, #sub3", { opacity: 0 });
+      gsap.set("#cardFetch, #cardReady", { opacity: 0 });
+
+      // ---------- SCENE 1 — hook (0 → 3.02) ----------
+      tl.fromTo("#brand1", { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 0.1);
+      [["#wCopy", 0.2], ["#wPaste", 1.0], ["#wDone", 1.8]].forEach(([sel, t]) => {
+        tl.fromTo(sel, { opacity: 0, y: 80, scale: 0.9 }, { opacity: 1, y: 0, scale: 1, duration: 0.36, ease: "back.out(1.7)" }, t);
+      });
+
+      // ---------- wipe 1 (covers the cut at 3.02) ----------
+      tl.fromTo("#w1", { x: -1920 }, { x: 0, duration: 0.22, ease: "power2.in" }, 2.8);
+      tl.to("#w1", { x: 1920, duration: 0.28, ease: "power2.out" }, 3.02);
+
+      // ---------- SCENE 2 — paste (3.02 → 8.02) ----------
+      tl.fromTo("#phone", { x: 280, opacity: 0, rotation: 3 }, { x: 0, opacity: 1, rotation: 0, duration: 0.6, ease: "power3.out" }, 3.12);
+      tl.fromTo("#glowA", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: "power2.out" }, 3.3);
+      tl.fromTo("#h2", { opacity: 0, y: 44 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 3.32);
+      tl.fromTo("#h2sub", { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 3.9);
+
+      // tap 1 on "Use copied link" — beat 4.53
+      tl.to("#cursor", { opacity: 1, x: 196, y: 461, duration: 0.45, ease: "power2.out" }, 3.98);
+      tl.to("#cursor", { scale: 0.78, duration: 0.07 }, 4.53);
+      tl.to("#btnUse", { scale: 0.96, duration: 0.07 }, 4.53);
+      tl.to("#ripple", { opacity: 0.6, duration: 0.01 }, 4.53);
+      tl.to("#ripple", { scale: 2.6, opacity: 0, duration: 0.45, ease: "power2.out" }, 4.54);
+      tl.to("#cursor", { scale: 1, duration: 0.1 }, 4.62);
+      tl.to("#btnUse", { scale: 1, duration: 0.1 }, 4.62);
+      tl.to("#cursor", { opacity: 0, duration: 0.2 }, 4.8);
+      // idle → fetching
+      tl.to("#sub1", { opacity: 0, duration: 0.15 }, 4.6);
+      tl.to("#sub2", { opacity: 1, duration: 0.2 }, 4.7);
+      tl.to("#cardIdle", { opacity: 0, scale: 0.96, duration: 0.22, ease: "power2.in" }, 4.62);
+      tl.fromTo("#cardFetch", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.28, ease: "power2.out" }, 4.75);
+      tl.to("#spin", { rotation: 900, duration: 0.85, ease: "none" }, 4.75);
+      // fetching → resolved card — beat 5.53
+      tl.to("#cardFetch", { opacity: 0, scale: 0.96, duration: 0.18, ease: "power2.in" }, 5.4);
+      tl.to("#sub2", { opacity: 0, duration: 0.15 }, 5.45);
+      tl.to("#sub3", { opacity: 1, duration: 0.2 }, 5.55);
+      tl.fromTo("#cardReady", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" }, 5.53);
+      tl.from("#thumb", { opacity: 0, y: 14, duration: 0.35, ease: "power3.out" }, 5.6);
+      tl.from("#rTitle, #rUp", { opacity: 0, y: 10, duration: 0.3, stagger: 0.06, ease: "power3.out" }, 5.7);
+      tl.from("#chips .chip", { opacity: 0, scale: 0.8, duration: 0.25, stagger: 0.05, ease: "back.out(2)" }, 5.8);
+      tl.from("#splitRow", { opacity: 0, y: 10, duration: 0.3, ease: "power3.out" }, 5.9);
+      tl.from("#btnSave", { opacity: 0, y: 12, duration: 0.3, ease: "power3.out" }, 6.0);
+      // toggle on
+      tl.to("#togKnob", { x: 20, duration: 0.22, ease: "power2.out" }, 6.32);
+      tl.to("#tog", { backgroundColor: "#ff4a38", duration: 0.22 }, 6.32);
+      tl.from("#secs", { opacity: 0, y: 8, duration: 0.3, ease: "power3.out" }, 6.45);
+      // tap 2 on "Save & Split" — beat 7.02
+      tl.set("#ripple", { x: 196, y: 576 }, 6.9);
+      tl.fromTo("#cursor", { x: 300, y: 700, opacity: 0, scale: 1 }, { opacity: 1, x: 196, y: 576, duration: 0.42, ease: "power2.out" }, 6.55);
+      tl.to("#cursor", { scale: 0.78, duration: 0.07 }, 7.02);
+      tl.to("#btnSave", { scale: 0.96, duration: 0.07 }, 7.02);
+      tl.to("#ripple", { opacity: 0.6, scale: 0.4, duration: 0.01 }, 7.02);
+      tl.to("#ripple", { scale: 2.6, opacity: 0, duration: 0.45, ease: "power2.out" }, 7.03);
+      tl.to("#cursor", { scale: 1, duration: 0.1 }, 7.12);
+      tl.to("#btnSave", { scale: 1, duration: 0.1 }, 7.12);
+      tl.to("#cursor", { opacity: 0, duration: 0.2 }, 7.3);
+      // scene 2 text out
+      tl.to("#h2, #h2sub", { opacity: 0, y: -28, duration: 0.26, ease: "power2.in" }, 7.74);
+
+      // ---------- SCENE 3 — split (8.02 → 12.02) ----------
+      tl.to("#scrDL", { x: -60, opacity: 0, duration: 0.2, ease: "power1.in" }, 8.02);
+      tl.fromTo("#scrSP", { x: 120, opacity: 0 }, { x: 0, opacity: 1, duration: 0.42, ease: "power3.out" }, 8.14);
+      tl.to("#t1", { color: "#6e675e", duration: 0.2 }, 8.02);
+      tl.to("#t3", { color: "#c62f1e", duration: 0.2 }, 8.02);
+      tl.fromTo("#h3", { opacity: 0, y: 44 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 8.12);
+      tl.fromTo("#h3pill", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 8.6);
+      tl.from("#gHead", { opacity: 0, y: 10, duration: 0.3, ease: "power3.out" }, 8.5);
+      // beat-grid: part 1 at 9.02, part 2 at 9.52, part 3 at 10.02
+      [["#p1", 9.02], ["#p2", 9.52], ["#p3", 10.02]].forEach(([sel, t]) => {
+        tl.from(sel, { opacity: 0, scale: 0.7, y: 34, duration: 0.38, ease: "back.out(1.8)" }, t);
+      });
+      tl.from("#gFoot .frow", { opacity: 0, y: 10, duration: 0.3, stagger: 0.12, ease: "power3.out" }, 10.5);
+      tl.to("#h3, #h3pill", { opacity: 0, y: -28, duration: 0.26, ease: "power2.in" }, 11.74);
+
+      // ---------- SCENE 4 — music (12.02 → 16.02) ----------
+      tl.to("#scrSP", { x: -60, opacity: 0, duration: 0.2, ease: "power1.in" }, 12.02);
+      tl.fromTo("#scrMU", { x: 120, opacity: 0 }, { x: 0, opacity: 1, duration: 0.42, ease: "power3.out" }, 12.14);
+      tl.to("#t3", { color: "#6e675e", duration: 0.2 }, 12.02);
+      tl.to("#t4", { color: "#c62f1e", duration: 0.2 }, 12.02);
+      tl.fromTo("#h4", { opacity: 0, y: 44 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 12.12);
+      tl.fromTo("#h4sub", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 12.7);
+      tl.from("#qpTitle", { opacity: 0, y: 8, duration: 0.3 }, 12.5);
+      // beat-grid: quick picks at 13.02, 13.52, 14.02, 14.52
+      [["#q1", 13.02], ["#q2", 13.52], ["#q3", 14.02], ["#q4", 14.52]].forEach(([sel, t]) => {
+        tl.from(sel, { opacity: 0, scale: 0.85, y: 16, duration: 0.34, ease: "back.out(1.8)" }, t);
+      });
+      tl.from("#plTitle, #pls, #allTitle, #ar1, #ar2", { opacity: 0, y: 14, duration: 0.35, stagger: 0.07, ease: "power3.out" }, 14.6);
+      // mini player at 15.02
+      tl.fromTo("#mini", { y: 70, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 15.02);
+      tl.fromTo("#miniBar", { width: 0 }, { width: 210, duration: 0.95, ease: "none" }, 15.1);
+      tl.to("#h4, #h4sub", { opacity: 0, y: -28, duration: 0.22, ease: "power2.in" }, 15.66);
+      tl.to("#glowA", { opacity: 0, duration: 0.3 }, 15.7);
+
+      // ---------- wipe 2 (covers the cut at 16.02) ----------
+      tl.fromTo("#w4", { x: -1920 }, { x: 0, duration: 0.22, ease: "power2.in" }, 15.8);
+      tl.to("#w4", { x: 1920, duration: 0.28, ease: "power2.out" }, 16.02);
+
+      // ---------- SCENE 5 — outro (16.02 → 20) ----------
+      // beat-locked: 16.02s (strong cue) — tile slam
+      tl.fromTo("#tile", { scale: 0.3, opacity: 0, rotation: -10 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.62, ease: "back.out(1.9)" }, 16.02);
+      tl.fromTo("#glowB", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 16.1);
+      tl.fromTo("#name", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 16.4);
+      // beat-locked: 17.02s (strong cue) — tagline
+      tl.fromTo("#tag", { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 17.02);
+      // beat-grid: platforms at 17.52
+      tl.fromTo("#plats span", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.12, ease: "power3.out" }, 17.52);
+      tl.to("#s5in, #glowB", { opacity: 0, duration: 0.4, ease: "power2.inOut" }, 19.6);
+
+      // ---------- audio-reactive (subtle): music RMS/bass → glow + tile shadow ----------
+      const glowAin = $("#glowAin"), glowBin = $("#glowBin"), tile = $("#tile");
+      const proxy = { t: 0 };
+      function react(t) {
+        const f = Math.max(0, Math.min(AUDIO.rms.length - 1, Math.round(t * 30)));
+        const r = AUDIO.rms[f], b = AUDIO.bass[f];
+        const op = (0.35 + 0.65 * r).toFixed(3), sc = (0.95 + 0.1 * b).toFixed(3);
+        glowAin.style.opacity = op; glowAin.style.transform = "scale(" + sc + ")";
+        glowBin.style.opacity = op; glowBin.style.transform = "scale(" + sc + ")";
+        tile.style.boxShadow = "0 " + (20 + 10 * b).toFixed(1) + "px " + (50 + 40 * b).toFixed(1) + "px rgba(255,74,56," + (0.26 + 0.24 * b).toFixed(3) + ")";
+      }
+      tl.to(proxy, { t: 20, duration: 20, ease: "none", onUpdate: () => react(proxy.t) }, 0);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

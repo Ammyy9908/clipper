@@ -1,0 +1,18 @@
+FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS builder
+ARG TARGETOS
+ARG TARGETARCH
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} go build -ldflags="-s -w" -o /app/bin/processor ./cmd/processor
+
+FROM alpine:3.20
+RUN apk add --no-cache ffmpeg ca-certificates font-dejavu font-noto && \
+    rm -rf /var/cache/apk/*
+
+COPY --from=builder /app/bin/processor /usr/local/bin/processor
+ENV WORK_DIR=/scratch
+RUN mkdir -p /scratch
+
+ENTRYPOINT ["/usr/local/bin/processor"]

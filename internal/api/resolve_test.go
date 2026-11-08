@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -205,14 +206,21 @@ func TestConfigListsAspects(t *testing.T) {
 	}
 }
 
-func TestUnshortenRedditURL(t *testing.T) {
-	ctx := t.Context()
-	input := "https://www.reddit.com/r/TeenagersButBetter/s/wtUsxniDEf"
-	got := unshortenURL(ctx, input)
-	t.Logf("Unshortened %s -> %s", input, got)
-	if strings.Contains(got, "/s/") {
-		t.Errorf("unshortenURL failed to unshorten %s, got %s", input, got)
+func TestNeedsUnshortening(t *testing.T) {
+	cases := []struct {
+		raw  string
+		want bool
+	}{
+		{"https://www.reddit.com/r/TeenagersButBetter/s/wtUsxniDEf", true},
+		{"https://redd.it/wtUsxniDEf", true},
+		{"https://vm.tiktok.com/ZM123/", true},
+		{"https://pin.it/abc", true},
+		{"https://www.youtube.com/watch?v=123", false},
 	}
-	norm := normalizeURL(got)
-	t.Logf("Normalized -> %s", norm)
+	for _, c := range cases {
+		u, _ := url.Parse(c.raw)
+		if got := needsUnshortening(u); got != c.want {
+			t.Errorf("needsUnshortening(%s) = %v, want %v", c.raw, got, c.want)
+		}
+	}
 }

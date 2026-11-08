@@ -7,6 +7,7 @@ struct SplitTabView: View {
     @ObservedObject var library: LibraryStore
     @ObservedObject private var player = PlayerModel.shared
     @State private var openGroup: SplitGroup?
+    @State private var showingSettings = false
 
     private var groups: [SplitGroup] {
         let grouped = Dictionary(grouping: library.clips.filter { $0.groupID != nil }, by: { $0.groupID! })
@@ -46,6 +47,9 @@ struct SplitTabView: View {
         .sheet(item: $openGroup) { group in
             SplitGroupDetailView(group: group, library: library)
         }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
+        }
     }
 
     private var header: some View {
@@ -59,6 +63,17 @@ struct SplitTabView: View {
                     .foregroundStyle(Theme.inkSecondary)
             }
             Spacer()
+            Button {
+                showingSettings = true
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Theme.inkSecondary)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Theme.surface))
+                    .overlay(Circle().strokeBorder(Theme.hairline, lineWidth: 1))
+            }
+            .accessibilityLabel("Settings")
         }
         .padding(.horizontal, 20)
         .padding(.top, 20)
@@ -186,7 +201,7 @@ private struct SplitGroupDetailView: View {
 
     private func play(_ clip: SavedClip) {
         guard let idx = parts.firstIndex(where: { $0.id == clip.id }) else { return }
-        player.play(clips: parts, startIndex: idx)
+        player.play(clips: parts, startIndex: idx, initialMode: .video)
         player.isExpanded = true
     }
 
@@ -207,6 +222,15 @@ private struct SplitGroupDetailView: View {
                 .lineLimit(1)
             Spacer()
             Menu {
+                Button {
+                    Task {
+                        for part in parts {
+                            await CloudStorageManager.shared.upload(clip: part)
+                        }
+                    }
+                } label: {
+                    Label("Save All Parts to Cloud", systemImage: "icloud.and.arrow.up")
+                }
                 Button(role: .destructive) {
                     confirmingDeleteAll = true
                 } label: {

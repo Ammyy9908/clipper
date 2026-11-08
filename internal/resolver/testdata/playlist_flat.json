@@ -1,0 +1,93 @@
+{
+ "_type": "playlist",
+ "id": "PLBsm_SagFMmdWnCnrNtLjA9kzfrRkto4i",
+ "title": "GameChops Albums / Study Mixes",
+ "uploader": "GameChops",
+ "channel": "GameChops",
+ "playlist_count": 116,
+ "extractor_key": "YoutubeTab",
+ "webpage_url": "https://www.youtube.com/playlist?list=PLBsm_SagFMmdWnCnrNtLjA9kzfrRkto4i",
+ "thumbnails": [
+  {
+   "url": "https://i.ytimg.com/vi/PGMqgzx5irY/hqdefault.jpg?sqp=-oaymwEWCKgBEF5IWvKriqkDCQgBFQAAiEIYAQ==&rs=AOn4CLB7wxU5k5YxOm9FIyasJrF_5u-MdQ",
+   "height": 94,
+   "width": 168,
+   "id": "0",
+   "resolution": "168x94"
+  }
+ ],
+ "entries": [
+  {
+   "id": "PGMqgzx5irY",
+   "url": "https://www.youtube.com/watch?v=PGMqgzx5irY",
+   "ie_key": "Youtube",
+   "title": "Zelda & Sleep: Ocarina of Time",
+   "duration": 4296,
+   "uploader": "GameChops",
+   "thumbnails": [
+    {
+     "url": "https://i.ytimg.com/vi/PGMqgzx5irY/hqdefault.jpg?sqp=-oaymwEcCNACELwBSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLADrzOQ7IiNCYhLSOHKpQ6pw0pq2w",
+     "height": 188,
+     "width": 336
+    }
+   ]
+  },
+  {
+   "id": "juCxPwRMyA8",
+   "url": "https://www.youtube.com/watch?v=juCxPwRMyA8",
+   "ie_key": "Youtube",
+   "title": "Live from the Mushroom Kingdom \ud83c\udf44 Super Mario Live Jazz",
+   "duration": 2457,
+   "uploader": "GameChops",
+   "thumbnails": [
+    {
+     "url": "https://i.ytimg.com/vi/juCxPwRMyA8/hqdefault.jpg?sqp=-oaymwEcCNACELwBSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLDbdsyAHqSLoL7WOFzThFmL4D996w",
+     "height": 188,
+     "width": 336
+    }
+   ]
+  },
+  {
+   "id": "IErdtDjJbVI",
+   "url": "https://www.youtube.com/watch?v=IErdtDjJbVI",
+   "ie_key": "Youtube",
+   "title": "pok\u00e9 emo\u00a0\ud83d\udda4 pok\u00e9mon midwest emo instrumentals",
+   "duration": 2405,
+   "uploader": "GameChops",
+   "thumbnails": [
+    {
+     "url": "https://i.ytimg.com/vi/IErdtDjJbVI/hqdefault.jpg?sqp=-oaymwEcCNACELwBSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLBuUdCzKf7PDSQ5OYK-rxuE0HYCVw",
+     "height": 188,
+     "width": 336
+    }
+   ]
+  },
+  {
+   "id": "aaaaaaaaaaa",
+   "url": "https://www.youtube.com/watch?v=aaaaaaaaaaa",
+   "ie_key": "Youtube",
+   "title": "[Private video]",
+   "duration": null,
+   "uploader": null,
+   "thumbnails": []
+  },
+  {
+   "id": "bbbbbbbbbbb",
+   "url": "https://www.youtube.com/watch?v=bbbbbbbbbbb",
+   "ie_key": "Youtube",
+   "title": "[Deleted video]",
+   "duration": null,
+   "uploader": null,
+   "thumbnails": []
+  },
+  {
+   "id": "ccccccccccc",
+   "url": null,
+   "ie_key": "Youtube",
+   "title": "Id only entry",
+   "duration": 61.5,
+   "uploader": "x",
+   "thumbnails": []
+  }
+ ]
+}

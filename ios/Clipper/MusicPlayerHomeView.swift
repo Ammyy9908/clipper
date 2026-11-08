@@ -17,6 +17,7 @@ struct MusicPlayerHomeView: View {
     @State private var showingImporter = false
     @State private var showingDropboxBrowser = false
     @State private var showingGoogleDriveBrowser = false
+    @State private var showingSettings = false
 
     private var songs: [SavedClip] { library.clips.filter { $0.isAudio } }
 
@@ -48,6 +49,9 @@ struct MusicPlayerHomeView: View {
         }
         .sheet(item: $addingToPlaylistClip) { clip in
             AddToPlaylistSheet(clip: clip, library: library)
+        }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
         }
         .alert("New Playlist", isPresented: $showingNewPlaylist) {
             TextField("Playlist name", text: $newPlaylistName)
@@ -125,15 +129,29 @@ struct MusicPlayerHomeView: View {
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Your Music")
+                Text("Your Audio")
                     .font(.system(size: 34, weight: .heavy, design: .rounded))
                     .foregroundStyle(Theme.ink)
-                Text(songs.isEmpty ? "Nothing here yet" : "\(songs.count) song\(songs.count == 1 ? "" : "s")")
+                Text(songs.isEmpty ? "Nothing here yet" : "\(songs.count) audio track\(songs.count == 1 ? "" : "s")")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Theme.inkSecondary)
             }
             Spacer()
-            importMenu
+            HStack(spacing: 8) {
+                Button {
+                    showingSettings = true
+                } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(Theme.inkSecondary)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(Theme.surface))
+                        .overlay(Circle().strokeBorder(Theme.hairline, lineWidth: 1))
+                }
+                .accessibilityLabel("Settings")
+
+                importMenu
+            }
         }
         .padding(.horizontal, 20)
         .padding(.top, 24)
@@ -221,7 +239,7 @@ struct MusicPlayerHomeView: View {
 
     private var allSongsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("All Songs")
+            Text("All Audio")
                 .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(Theme.ink)
                 .padding(.horizontal, 20)
@@ -235,6 +253,11 @@ struct MusicPlayerHomeView: View {
                         onPlay: { play(clip) },
                         onToggle: { player.togglePlay() }
                     ) {
+                        Button {
+                            Task { await CloudStorageManager.shared.upload(clip: clip) }
+                        } label: {
+                            Label("Save to Cloud (\(CloudStorageManager.shared.preferredDestination.shortName))", systemImage: "icloud.and.arrow.up")
+                        }
                         Button {
                             addingToPlaylistClip = clip
                         } label: {
@@ -260,7 +283,7 @@ struct MusicPlayerHomeView: View {
             Image(systemName: "music.note")
                 .font(.system(size: 30))
                 .foregroundStyle(Theme.inkTertiary)
-            Text("No music yet")
+            Text("No audio yet")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Theme.ink)
             Text("Save an MP3 from the downloader, or import from Files, Dropbox, or Drive")
@@ -280,7 +303,7 @@ struct MusicPlayerHomeView: View {
                     Label("Google Drive", systemImage: "tray.full")
                 }
             } label: {
-                Text("Import Music")
+                Text("Import Audio")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 20)
@@ -445,7 +468,7 @@ private struct PlaylistCard: View {
                 .foregroundStyle(isCurrent ? Theme.accent : Theme.ink)
                 .lineLimit(1)
                 .frame(width: 140, alignment: .leading)
-            Text("\(songs.count) songs")
+            Text("\(songs.count) track\(songs.count == 1 ? "" : "s")")
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.inkSecondary)
         }

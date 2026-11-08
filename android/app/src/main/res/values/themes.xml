@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose draws everything; this is only the splash/window theme.
+         NoActionBar because MainActivity is a ComponentActivity. -->
+    <style name="Theme.Clipper" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

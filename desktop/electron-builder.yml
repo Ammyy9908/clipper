@@ -1,0 +1,65 @@
+appId: video.clipplay.desktop
+productName: ClipPlay
+directories:
+  output: release/${version}
+  buildResources: build
+files:
+  - dist
+  - dist-electron
+asarUnpack:
+  - "node_modules/ffmpeg-static/**"
+afterPack: "./scripts/afterPack.js"
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+    - target: zip
+      arch:
+        - arm64
+  category: public.app-category.video
+  icon: build/icon.icns
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  identity: null
+
+dmg:
+  title: "${productName} Installer"
+  background: build/background.tiff
+  iconSize: 96
+  iconTextSize: 12
+  window:
+    width: 560
+    height: 380
+  contents:
+    - x: 140
+      y: 190
+      type: file
+    - x: 420
+      y: 190
+      type: link
+      path: /Applications
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  icon: public/icon.png
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+  category: Video;AudioVideo;
+  icon: public/icon.png

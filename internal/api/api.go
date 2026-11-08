@@ -448,12 +448,30 @@ func serverError(w http.ResponseWriter) {
 	writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
 }
 
+func isScannerProbe(p string) bool {
+	p = strings.ToLower(p)
+	if strings.HasPrefix(p, "/.") {
+		return true
+	}
+	if strings.HasSuffix(p, ".php") || strings.HasSuffix(p, ".env") || strings.HasSuffix(p, ".ini") || strings.HasSuffix(p, ".yml") || strings.HasSuffix(p, ".yaml") {
+		return true
+	}
+	if strings.HasPrefix(p, "/aws") || strings.HasPrefix(p, "/azure") || strings.HasPrefix(p, "/anthropic") || strings.HasPrefix(p, "/claude") || strings.HasPrefix(p, "/ai") || strings.HasPrefix(p, "/gcp") || strings.HasPrefix(p, "/serviceaccount") || strings.HasPrefix(p, "/service-account") {
+		return true
+	}
+	return false
+}
+
 // logging records each request with the caller's address as the API sees it,
 // after trusted-proxy handling. That is the address limits are counted against,
 // so it is what to check when confirming X-Forwarded-For is being honoured.
 // The ResponseWriter is passed through untouched so WebSocket upgrades still work.
 func (a *API) logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if isScannerProbe(r.URL.Path) {
+			http.NotFound(w, r)
+			return
+		}
 		start := time.Now()
 		next.ServeHTTP(w, r)
 		a.log.Info("request", "method", r.Method, "path", r.URL.Path, "ip", a.clientIP(r), "dur", time.Since(start))

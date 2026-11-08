@@ -38,7 +38,11 @@ func classify(stderr string, fallback error) error {
 	case strings.Contains(s, "not a bot"),
 		strings.Contains(s, "http error 429"),
 		strings.Contains(s, "rate-limit"),
-		strings.Contains(s, "blocked it in your country"):
+		strings.Contains(s, "blocked it in your country"),
+		strings.Contains(s, "407 proxy authentication"),
+		strings.Contains(s, "proxy authentication required"),
+		strings.Contains(s, "tunnel connection failed"),
+		strings.Contains(s, "unable to connect to proxy"):
 		if msg != "" {
 			return fmt.Errorf("%w: %s", ErrBlocked, msg)
 		}
@@ -57,6 +61,13 @@ func classify(stderr string, fallback error) error {
 		strings.Contains(s, "login required"),
 		strings.Contains(s, "empty media response"),
 		strings.Contains(s, "without being logged-in"),
+		strings.Contains(s, "only works when logged-in"),
+		strings.Contains(s, "logged-in"),
+		strings.Contains(s, "provide account credentials"),
+		strings.Contains(s, "permission to access"),
+		strings.Contains(s, "password protected"),
+		strings.Contains(s, "sign in to confirm"),
+		strings.Contains(s, "sign in to view"),
 		strings.Contains(s, "http error 410"),
 		strings.Contains(s, "410: gone"),
 		strings.Contains(s, "410 gone"),

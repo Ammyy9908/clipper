@@ -1,0 +1,446 @@
+/* clipPlay YouTube Integration Styles */
+
+:root {
+  --cp-brand: #ff3b30;
+  --cp-brand-gradient: linear-gradient(135deg, #ff3b30 0%, #ff6b4a 100%);
+  --cp-bg-dark: rgba(18, 18, 20, 0.96);
+  --cp-card-dark: #242428;
+  --cp-border-dark: rgba(255, 255, 255, 0.12);
+  --cp-text-dark: #f5f5f7;
+  --cp-subtext-dark: #a1a1aa;
+}
+
+/* YouTube Action Bar Button */
+.clipplay-yt-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  height: 36px !important;
+  padding: 0 14px !important;
+  margin-left: 8px !important;
+  border-radius: 18px !important;
+  font-family: "Roboto", "Geist", "Segoe UI", sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  border: 1px solid rgba(255, 59, 48, 0.25) !important;
+  background: rgba(255, 59, 48, 0.08) !important;
+  color: #ff453a !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+html[dark] .clipplay-yt-btn,
+body[dark] .clipplay-yt-btn,
+[dark] .clipplay-yt-btn {
+  background: rgba(255, 59, 48, 0.14) !important;
+  color: #ff5c50 !important;
+  border-color: rgba(255, 59, 48, 0.35) !important;
+}
+
+.clipplay-yt-btn:hover {
+  background: var(--cp-brand-gradient) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(255, 59, 48, 0.35) !important;
+}
+
+.clipplay-yt-btn:active {
+  transform: translateY(0) scale(0.98) !important;
+}
+
+.clipplay-yt-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0 !important;
+  fill: currentColor !important;
+}
+
+.clipplay-yt-btn .cp-badge {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  padding: 2px 5px !important;
+  border-radius: 4px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Modal Overlay & Container */
+#clipplay-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: cpFadeIn 0.2s ease-out;
+  box-sizing: border-box;
+}
+
+#clipplay-modal {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  background: #141416;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: #f5f5f7;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow: hidden;
+  animation: cpScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+@keyframes cpFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cpScaleIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Modal Header */
+.cp-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cp-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.cp-modal-title svg {
+  width: 20px;
+  height: 20px;
+  fill: #ff3b30;
+}
+
+.cp-close-btn {
+  background: transparent;
+  border: none;
+  color: #8e8e93;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.15s ease;
+}
+
+.cp-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Modal Content */
+.cp-modal-body {
+  padding: 18px 20px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+/* Video Info Box */
+.cp-video-card {
+  display: flex;
+  gap: 14px;
+  background: #1c1c1f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.cp-thumb-wrapper {
+  position: relative;
+  width: 110px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #2a2a2e;
+}
+
+.cp-thumb-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cp-duration-tag {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  font-size: 10px;
+  font-weight: 600;
+  color: #ffffff;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.cp-video-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cp-video-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.35;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cp-video-uploader {
+  font-size: 12px;
+  color: #98989f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tabs */
+.cp-tabs {
+  display: flex;
+  background: #1c1c1f;
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cp-tab-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: #8e8e93;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.cp-tab-btn.active {
+  background: #2a2a2e;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Format List */
+.cp-format-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cp-format-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1c1c1f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 10px 14px;
+  transition: all 0.15s ease;
+}
+
+.cp-format-item:hover {
+  background: #242429;
+  border-color: rgba(255, 59, 48, 0.4);
+}
+
+.cp-format-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cp-quality-badge {
+  background: rgba(255, 59, 48, 0.15);
+  color: #ff5c50;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  min-width: 48px;
+  text-align: center;
+}
+
+.cp-quality-badge.audio-badge {
+  background: rgba(48, 209, 88, 0.15);
+  color: #30d158;
+}
+
+.cp-format-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.cp-format-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.cp-format-ext {
+  font-size: 11px;
+  color: #8e8e93;
+}
+
+.cp-download-action-btn {
+  background: var(--cp-brand-gradient);
+  border: none;
+  color: #ffffff;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.cp-download-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(255, 59, 48, 0.35);
+}
+
+.cp-download-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Progress / Status Area */
+.cp-status-container {
+  background: #1c1c1f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+  margin-top: 14px;
+  text-align: center;
+}
+
+.cp-spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  border-top-color: #ff3b30;
+  animation: cpSpin 0.7s linear infinite;
+  margin-bottom: 8px;
+}
+
+@keyframes cpSpin {
+  to { transform: rotate(360deg); }
+}
+
+.cp-status-text {
+  font-size: 13px;
+  color: #f5f5f7;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.cp-progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: #2a2a2e;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.cp-progress-bar-fill {
+  height: 100%;
+  background: var(--cp-brand-gradient);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Success Message */
+.cp-success-msg {
+  color: #30d158;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Error Message */
+.cp-error-msg {
+  color: #ff453a;
+  font-size: 12px;
+  background: rgba(255, 69, 58, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 69, 58, 0.2);
+  margin-top: 10px;
+}
+
+/* Footer Links */
+.cp-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: #101012;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+  color: #8e8e93;
+}
+
+.cp-modal-footer a {
+  color: #ff5c50;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.cp-modal-footer a:hover {
+  text-decoration: underline;
+}

@@ -135,36 +135,31 @@ func (r *Resolver) candidateAttempts(isYT bool) []attempt {
 	var attempts []attempt
 
 	if isYT {
-		// 1. Direct attempt with cookies (tv_embedded,web_embedded,mweb)
+		// 1. Direct attempt with cookies or clean ios/web (fastest, cleanest, least bot-blocked)
+		playerClients := "ios,web,mweb"
 		if r.Cookies != "" {
 			attempts = append(attempts, attempt{
 				proxy:         "",
 				cookies:       r.Cookies,
-				playerClients: "tv_embedded,web_embedded,mweb",
+				playerClients: playerClients,
 			})
 		}
 
-		// 2. Direct clean attempt without cookies (android,ios,web_embedded - bypasses PO token requirements)
+		// 2. Direct clean attempt without cookies
 		attempts = append(attempts, attempt{
 			proxy:         "",
 			cookies:       "",
-			playerClients: "android,ios,web_embedded,mweb",
+			playerClients: playerClients,
 		})
 
-		// 3. Proxy fallback
+		// 3. Proxy fallback (single fast attempt if egress pool is configured)
 		if n := len(r.Proxies); n > 0 {
 			perm := rand.Perm(n)
-			maxFallbacks := 2
-			if n < maxFallbacks {
-				maxFallbacks = n
-			}
-			for i := 0; i < maxFallbacks; i++ {
-				attempts = append(attempts, attempt{
-					proxy:         r.Proxies[perm[i]],
-					cookies:       r.Cookies,
-					playerClients: "tv_embedded,web_embedded,mweb",
-				})
-			}
+			attempts = append(attempts, attempt{
+				proxy:         r.Proxies[perm[0]],
+				cookies:       r.Cookies,
+				playerClients: playerClients,
+			})
 		}
 	} else {
 		// Non-YouTube platforms (Reddit, Pinterest, TikTok, Instagram, etc.):
@@ -239,9 +234,8 @@ func (r *Resolver) Resolve(ctx context.Context, url string) (Info, error) {
 				playerClients = "tv_embedded,tv,mweb,web"
 			}
 			args = append(args,
-				"--remote-components", "ejs:github",
 				"--js-runtimes", "node",
-				"--socket-timeout", "6",
+				"--socket-timeout", "4",
 				"--impersonate", "chrome",
 				"--extractor-args", fmt.Sprintf("youtube:player_client=%s;skip=translated_subs,storyboards,comments,subtitles", playerClients),
 			)
@@ -249,7 +243,10 @@ func (r *Resolver) Resolve(ctx context.Context, url string) (Info, error) {
 				args = append(args, "--username", "oauth2", "--password", "")
 			}
 		} else {
-			args = append(args, "--socket-timeout", "10")
+			args = append(args,
+				"--socket-timeout", "6",
+				"--impersonate", "chrome",
+			)
 		}
 
 		if isPlaylist {
@@ -268,9 +265,11 @@ func (r *Resolver) Resolve(ctx context.Context, url string) (Info, error) {
 		}
 		args = append(args, "--", url)
 
-		attemptTimeout := 15 * time.Second
-		if !isYT {
+		attemptTimeout := 4 * time.Second
+		if isPlaylist {
 			attemptTimeout = 10 * time.Second
+		} else if !isYT {
+			attemptTimeout = 6 * time.Second
 		}
 		attemptCtx, attemptCancel := context.WithTimeout(ctx, attemptTimeout)
 		var stderr strings.Builder
@@ -279,10 +278,17 @@ func (r *Resolver) Resolve(ctx context.Context, url string) (Info, error) {
 		out, err := cmd.Output()
 		attemptCancel()
 		if err != nil {
-			lastErr = classify(stderr.String(), err)
-			if errors.Is(lastErr, ErrUnavailable) || errors.Is(lastErr, ErrUnsupported) || errors.Is(lastErr, ErrLiveStream) {
-				return Info{}, lastErr
+			errStr := strings.ToLower(stderr.String())
+			classified := classify(stderr.String(), err)
+			if errors.Is(classified, ErrUnavailable) || errors.Is(classified, ErrUnsupported) || errors.Is(classified, ErrLiveStream) {
+				return Info{}, classified
 			}
+			// If a proxy attempt fails with proxy authentication / tunnel errors, don't
+			// overwrite a previous direct attempt's error.
+			if att.proxy != "" && (strings.Contains(errStr, "proxy") || strings.Contains(errStr, "407")) && lastErr != nil {
+				continue
+			}
+			lastErr = classified
 			continue
 		}
 

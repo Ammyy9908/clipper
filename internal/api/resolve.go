@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"regexp"
 	"sort"
@@ -127,26 +130,60 @@ func (a *API) resolveCached(ctx context.Context, rawURL string) (resolveResp, er
 
 	// 3. Coalesce concurrent requests for the same URL with singleflight
 	val, err, _ := a.sf.Do(rawURL, func() (any, error) {
-		resolveCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
-		defer cancel()
+		var info resolver.Info
+		var err error
 
-		info, err := a.res.Resolve(resolveCtx, rawURL)
-		if err != nil {
-			// oEmbed can describe a single YouTube video, but for other platforms or
-			// playlists it is not a valid fallback.
-			if !looksLikePlaylistURL(rawURL) && isYouTubeURL(rawURL) {
-				a.log.Warn("yt-dlp resolve failed; falling back to oembed metadata", "url", rawURL, "err", err)
-				oCtx, oCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		if isYouTubeURL(rawURL) && !looksLikePlaylistURL(rawURL) {
+			// For single YouTube videos:
+			// Race yt-dlp with a 2.5s fast window against oEmbed metadata fallback.
+			// Cloud datacenter IPs are frequently bot-throttled by YouTube, which previously
+			// caused users to wait 30+ seconds for yt-dlp timeouts before falling back.
+			type ytResult struct {
+				info resolver.Info
+				err  error
+			}
+			ytCh := make(chan ytResult, 1)
+			fastCtx, fastCancel := context.WithTimeout(ctx, 3500*time.Millisecond)
+
+			go func() {
+				resInfo, resErr := a.res.Resolve(fastCtx, rawURL)
+				ytCh <- ytResult{info: resInfo, err: resErr}
+			}()
+
+			select {
+			case res := <-ytCh:
+				fastCancel()
+				if res.err == nil {
+					info = res.info
+				} else {
+					a.log.Warn("yt-dlp fast resolve failed; falling back to oembed metadata", "url", rawURL, "err", res.err)
+					oCtx, oCancel := context.WithTimeout(ctx, 3*time.Second)
+					defer oCancel()
+					info, err = resolveOEmbed(oCtx, rawURL)
+				}
+			case <-time.After(2500 * time.Millisecond):
+				fastCancel()
+				a.log.Warn("yt-dlp resolve exceeded 2.5s budget; fast-falling back to oembed metadata", "url", rawURL)
+				oCtx, oCancel := context.WithTimeout(ctx, 3*time.Second)
 				defer oCancel()
-				oInfo, oErr := resolveOEmbed(oCtx, rawURL)
-				if oErr == nil {
+				info, err = resolveOEmbed(oCtx, rawURL)
+			}
+		} else {
+			resolveCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+			defer cancel()
+			info, err = a.res.Resolve(resolveCtx, rawURL)
+			if err != nil && !looksLikePlaylistURL(rawURL) && isYouTubeURL(rawURL) {
+				oCtx, oCancel := context.WithTimeout(context.Background(), 3*time.Second)
+				defer oCancel()
+				if oInfo, oErr := resolveOEmbed(oCtx, rawURL); oErr == nil {
 					info = oInfo
 					err = nil
 				}
 			}
-			if err != nil {
-				return resolveResp{}, err
-			}
+		}
+
+		if err != nil {
+			return resolveResp{}, err
 		}
 
 		var resp resolveResp
@@ -194,7 +231,73 @@ type oEmbedData struct {
 	ProviderName string `json:"provider_name"`
 }
 
+type ytProbeResult struct {
+	duration  float64
+	qualities []int
+}
+
+var (
+	ytLengthRegex  = regexp.MustCompile(`"lengthSeconds":"(\d+)"`)
+	ytQualityRegex = regexp.MustCompile(`"qualityLabel":"(\d+)p`)
+)
+
+func probeYouTubeMeta(ctx context.Context, rawURL string) ytProbeResult {
+	pCtx, pCancel := context.WithTimeout(ctx, 2*time.Second)
+	defer pCancel()
+
+	req, err := http.NewRequestWithContext(pCtx, http.MethodGet, rawURL, nil)
+	if err != nil {
+		return ytProbeResult{}
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+
+	client := &http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return ytProbeResult{}
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1500*1024))
+	if err != nil && len(body) == 0 {
+		return ytProbeResult{}
+	}
+
+	var res ytProbeResult
+
+	// 1. Exact Duration
+	if m := ytLengthRegex.FindSubmatch(body); len(m) > 1 {
+		if sec, err := strconv.ParseFloat(string(m[1]), 64); err == nil {
+			res.duration = sec
+		}
+	}
+
+	// 2. Real Available Qualities (e.g. 480, 360, 240, 144)
+	matches := ytQualityRegex.FindAllSubmatch(body, -1)
+	seen := make(map[int]bool)
+	for _, m := range matches {
+		if len(m) > 1 {
+			if q, err := strconv.Atoi(string(m[1])); err == nil && q > 0 && !seen[q] {
+				seen[q] = true
+				res.qualities = append(res.qualities, q)
+			}
+		}
+	}
+	sort.Slice(res.qualities, func(i, j int) bool {
+		return res.qualities[i] > res.qualities[j]
+	})
+
+	return res
+}
+
 func resolveOEmbed(ctx context.Context, rawURL string) (resolver.Info, error) {
+	// Probe duration and available qualities concurrently with oEmbed fetch
+	metaCh := make(chan ytProbeResult, 1)
+	go func() {
+		metaCh <- probeYouTubeMeta(ctx, rawURL)
+	}()
+
 	apiURL := "https://www.youtube.com/oembed?url=" + url.QueryEscape(rawURL) + "&format=json"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
 	if err != nil {
@@ -202,7 +305,7 @@ func resolveOEmbed(ctx context.Context, rawURL string) (resolver.Info, error) {
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
-	client := &http.Client{Timeout: 6 * time.Second}
+	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return resolver.Info{}, err
@@ -222,20 +325,44 @@ func resolveOEmbed(ctx context.Context, rawURL string) (resolver.Info, error) {
 		return resolver.Info{}, errors.New("empty oembed title")
 	}
 
+	var meta ytProbeResult
+	select {
+	case meta = <-metaCh:
+	case <-time.After(1200 * time.Millisecond):
+	}
+
+	// If no qualities could be detected from probe, fall back to safe standard qualities [1080, 720, 480, 360]
+	qualities := meta.qualities
+	if len(qualities) == 0 {
+		qualities = []int{1080, 720, 480, 360}
+	}
+
+	var formats []resolver.Format
+	for _, q := range qualities {
+		// Include standard resolutions (>= 360p, or if none >= 360p, include whatever is highest)
+		if q >= 360 || len(formats) == 0 {
+			formats = append(formats, resolver.Format{
+				Height: q,
+				VCodec: "avc1",
+				ACodec: "mp4a",
+				Note:   fmt.Sprintf("%dp", q),
+			})
+		}
+	}
+	// Always append audio-only format
+	formats = append(formats, resolver.Format{
+		VCodec: "none",
+		ACodec: "mp4a",
+		Note:   "audio only",
+	})
+
 	return resolver.Info{
 		Title:     data.Title,
 		Uploader:  data.AuthorName,
 		Extractor: "youtube",
+		Duration:  meta.duration,
 		Thumbnail: data.ThumbnailURL,
-		Formats: []resolver.Format{
-			{Height: 2160, VCodec: "avc1", ACodec: "mp4a", TBR: 10000, Note: "4K (2160p)"},
-			{Height: 1440, VCodec: "avc1", ACodec: "mp4a", TBR: 6000, Note: "2K (1440p)"},
-			{Height: 1080, VCodec: "avc1", ACodec: "mp4a", TBR: 4000, Note: "1080p"},
-			{Height: 720, VCodec: "avc1", ACodec: "mp4a", TBR: 2500, Note: "720p"},
-			{Height: 480, VCodec: "avc1", ACodec: "mp4a", TBR: 1200, Note: "480p"},
-			{Height: 360, VCodec: "avc1", ACodec: "mp4a", TBR: 600, Note: "360p"},
-			{VCodec: "none", ACodec: "mp4a", Note: "audio only"},
-		},
+		Formats:   formats,
 	}, nil
 }
 
@@ -337,26 +464,30 @@ func isYouTubeMusic(raw string) bool {
 	return host == "music.youtube.com" || strings.HasSuffix(host, ".music.youtube.com")
 }
 
-var unshortenClient = &http.Client{
-	Timeout: 5 * time.Second,
-	CheckRedirect: func(req *http.Request, via []*http.Request) error {
-		if len(via) >= 8 {
-			return http.ErrUseLastResponse
-		}
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-		return nil
-	},
-}
+var (
+	unshortenJar, _ = cookiejar.New(nil)
+	unshortenClient = &http.Client{
+		Timeout: 5 * time.Second,
+		Jar:     unshortenJar,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 10 {
+				return http.ErrUseLastResponse
+			}
+			req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+			return nil
+		},
+	}
+)
 
 func needsUnshortening(u *url.URL) bool {
 	host := strings.ToLower(u.Host)
 	path := u.Path
 
 	// Reddit short links: /r/.../s/XYZ or /s/XYZ or reddit.app.link
-	if strings.Contains(host, "reddit.com") && (strings.Contains(path, "/s/") || strings.HasPrefix(path, "/s/")) {
+	if (strings.Contains(host, "reddit.com") || strings.Contains(host, "redd.it")) && (strings.Contains(path, "/s/") || strings.HasPrefix(path, "/s/")) {
 		return true
 	}
-	if host == "reddit.app.link" {
+	if host == "reddit.app.link" || host == "redd.it" {
 		return true
 	}
 	// Pinterest short links: pin.it
@@ -368,7 +499,7 @@ func needsUnshortening(u *url.URL) bool {
 		return true
 	}
 	// Generic short links
-	if host == "ig.me" || host == "t.co" || host == "bit.ly" {
+	if host == "ig.me" || host == "t.co" || host == "bit.ly" || host == "fb.watch" {
 		return true
 	}
 	return false
@@ -402,6 +533,16 @@ func unshortenURL(ctx context.Context, raw string) string {
 		finalURL := resp.Request.URL.String()
 		if finalURL != "" && finalURL != raw {
 			return finalURL
+		}
+	}
+	if loc := resp.Header.Get("Location"); loc != "" {
+		if strings.HasPrefix(loc, "http://") || strings.HasPrefix(loc, "https://") {
+			return loc
+		}
+		if base, err := url.Parse(raw); err == nil {
+			if rel, err := url.Parse(loc); err == nil {
+				return base.ResolveReference(rel).String()
+			}
 		}
 	}
 	return raw

@@ -1,0 +1,39 @@
+{
+ "id": "abc",
+ "title": "A single video",
+ "extractor_key": "Youtube",
+ "duration": 212,
+ "thumbnail": "https://i.ytimg.com/x.jpg",
+ "uploader": "Someone",
+ "_type": "video",
+ "formats": [
+  {
+   "format_id": "137",
+   "ext": "mp4",
+   "height": 1080,
+   "width": 1920,
+   "vcodec": "avc1.640028",
+   "acodec": "none",
+   "tbr": 4000,
+   "filesize": 90000000
+  },
+  {
+   "format_id": "136",
+   "ext": "mp4",
+   "height": 720,
+   "width": 1280,
+   "vcodec": "avc1.4d401f",
+   "acodec": "none",
+   "tbr": 2500,
+   "filesize": 50000000
+  },
+  {
+   "format_id": "140",
+   "ext": "m4a",
+   "vcodec": "none",
+   "acodec": "mp4a.40.2",
+   "tbr": 128,
+   "filesize": 3400000
+  }
+ ]
+}
